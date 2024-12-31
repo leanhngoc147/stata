@@ -1,7 +1,6 @@
-version 1.0.0
-description("A package for sharingan functionality in Stata")
-author("Le Anh Ngoc")
-email("leanhngoc@ump.com")
-
-sharingan.ado
-sharinganhtml.ado
+./ngocanhle.pkg
+* This is the package file for ngocanhle
+* The files to be installed are listed below
+*-------------------------------------------------
+net install sharingan, replace
+net install sharinganhtml, replace
