@@ -1,3 +1,7 @@
-ngocanhle.pkg
-sharingan.ado
-sharinganhtml.ado
+d Thai Thanh Truc's Stata Programs
+d
+d All other programs and commands were written by Thai Thanh Truc
+d Faculty of Public Health, Ho Chi Minh city University of Medicine and Pharmacy, Vietnam (thaithanhtruc@fphhcm.edu.vn)
+
+p ngocanhle.pkg            câu lệnh tạo bảng thống kê mô tả
+
