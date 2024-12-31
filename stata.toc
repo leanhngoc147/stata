@@ -1,7 +1,8 @@
-d Thai Thanh Truc's Stata Programs
-d
-d All other programs and commands were written by Thai Thanh Truc
-d Faculty of Public Health, Ho Chi Minh city University of Medicine and Pharmacy, Vietnam (thaithanhtruc@fphhcm.edu.vn)
-
-p ngocanhle.pkg            câu lệnh tạo bảng thống kê mô tả
-
+# delimit ;
+Version: 1.0;
+Description: câu lệnh tạo bảng thống kê mô tả;
+Author: Le Anh ngoc;
+Email: leanhngocump@gmail.com;
+Date: 31 Dec 2024;
+Files: sharingan.ado; sharinganhtml.ado
+;
