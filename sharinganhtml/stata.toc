@@ -1,8 +1,3 @@
-# delimit ;
-Version: 1.0;
-Description: câu lệnh tạo bảng thống kê mô tả;
-Author: Le Anh ngoc;
-Email: leanhngocump@gmail.com;
-Date: 31 Dec 2024;
-Files: sharinganhtml.ado
-;
+v 1.0
+d Le anh ngoc
+p sharinganhtml.pkg
