@@ -1,6 +1,7 @@
-./ngocanhle.pkg
-* This is the package file for ngocanhle
-* The files to be installed are listed below
-*-------------------------------------------------
-net install sharingan, replace
-net install sharinganhtml, replace
+*! ngocanhle package
+* Description: Sample package for Stata
+* Version: 1.0
+* Files:
+ngocanhle.pkg
+sharingan.ado
+sharinganhtml.ado
