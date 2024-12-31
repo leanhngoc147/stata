@@ -1,0 +1,7 @@
+version 1.0.0
+description("A package for sharingan functionality in Stata")
+author("Le Anh Ngoc")
+email("leanhngoc@ump.com")
+
+sharingan.ado
+sharinganhtml.ado
