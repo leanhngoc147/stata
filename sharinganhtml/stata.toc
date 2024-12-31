@@ -1,3 +1,0 @@
-v 1.0
-d Le anh ngoc
-p sharinganhtml.pkg
