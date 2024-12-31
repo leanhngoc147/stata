@@ -4,5 +4,5 @@ Description: câu lệnh tạo bảng thống kê mô tả;
 Author: Le Anh ngoc;
 Email: leanhngocump@gmail.com;
 Date: 31 Dec 2024;
-Files: sharingan.ado; sharinganhtml.ado
+Files: sharingan.ado
 ;
