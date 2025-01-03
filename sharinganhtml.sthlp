@@ -36,14 +36,12 @@ Ví dụ
 
     sharinganhtml mpg weight price, digit(2) output("bieu_do_cua_toi.html") autoopen title("Biểu đồ Sharingan của tôi") theme("dark") nosort
 
-Tác giả
 
-    leanhngoc147
-
-Email
-
-    email_cua_ban@example.com
-
-Ngày
-
-    1 Tháng 1 2025
+       +---------------------------------------------------------------------------------------------------------------------+
+        | Lê Anh Ngọc                                                                                                       | 
+       +---------------------------------------------------------------------------------------------------------------------+
+        | Cơ quan         : Đại học Y dược Thành phố Hồ Chí Minh                                                            |
+        | ngày phát hành  : 01/01/2025                   								    |
+        | Email           : leanhngocump@gmail.com                                                                          |
+        | --> nếu bạn có nhu cầu hỗ trợ về phương pháp nghiên cứu hoặc phân tích số liệu, đừng ngại hãy gửi mail cho tôi <3 |
+       +---------------------------------------------------------------------------------------------------------------------+
