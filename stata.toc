@@ -1,5 +1,6 @@
-v 1.0
+
 d Le anh ngoc
 p sharingan.pkg
 p sharinganhtml.pkg
 p whattest.pkg
+

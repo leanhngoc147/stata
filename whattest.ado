@@ -1,5 +1,3 @@
-capture program drop whattest
-
 program whattest
     args option
 
