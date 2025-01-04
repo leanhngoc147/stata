@@ -1,25 +1,46 @@
 capture program drop sharinganhtml
 program define sharinganhtml, rclass
-    version 17.0
+    version 14.0
 
     syntax [varlist] [, DIGIT(integer 1) OUTPUT(string) AUTOOPEN ///
-        TITLE(string) THEME(string) NOSORT INDENT(string)]
+        TITLE(string) THEME(string) NOSORT INDENT(string) MISSING]
 
-    // Kiểm tra phiên bản Stata
-    if !c(version) >= 15 {
-        display as error "Chương trình này yêu cầu Stata 15 trở lên."
-        exit 199
-    }
-
-    cap noi {
-        display as text "\t\t███████╗██╗  ██╗ █████╗ ██████╗ ██╗███╗   ██╗ ██████╗  █████╗ ███╗   ██╗  "
-        display as text "\t\t██╔════╝██║  ██║██╔══██╗██╔══██╗██║████╗  ██║██╔════╝ ██╔══██╗████╗  ██║  "
-        display as text "\t\t███████╗███████║███████║██████╔╝██║██╔██╗ ██║██║  ███╗███████║██╔██╗ ██║  "
-        display as text "\t\t╚════██║██╔══██║██╔══██║██╔══██╗██║██║╚██╗██║██║   ██║██╔══██║██║╚██╗██║  "
-        display as text "\t\t███████║██║  ██║██║  ██║██║  ██║██║██║ ╚████║╚██████╔╝██║  ██║██║ ╚████║"
-        display as text "\t\t╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝"
-    }
-
+	//in hình sharingan	
+display as text "███████╗██╗  ██╗ █████╗ ██████╗ ██╗███╗   ██╗ ██████╗  █████╗ ███╗   ██╗  "
+display as text "██╔════╝██║  ██║██╔══██╗██╔══██╗██║████╗  ██║██╔════╝ ██╔══██╗████╗  ██║  "
+display as text "███████╗███████║███████║██████╔╝██║██╔██╗ ██║██║  ███╗███████║██╔██╗ ██║  "
+display as text "╚════██║██╔══██║██╔══██║██╔══██╗██║██║╚██╗██║██║   ██║██╔══██║██║╚██╗██║  "
+display as text "███████║██║  ██║██║  ██║██║  ██║██║██║ ╚████║╚██████╔╝██║  ██║██║ ╚████║"
+display as text "╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝"
+display as text "⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿"
+display as text "⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿"
+display as text "⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣐⣠⣥⡄⠀⠀⠀⠀⠀⠀⠀⢠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⢸"
+display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣀⣠⣤⣴⣶⣾⣿⠟⢹⣿⣷⠀⠀⠀⠀⠀⠀⠀⢸⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡾"
+display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⠟⢉⣁⣄⣉⣠⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⢨⣅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣷"
+display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⠏⣰⡟⠉⣉⡉⠻⠿⠟⠛⠃⠀⡀⠀⠀⠀⠀⢸⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢺⣿⣿"
+display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⠿⠟⠀⠛⠀⠈⠉⠀⡀⢠⣶⣾⣿⠀⣿⠀⠀⠀⠀⣸⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⢿⣿"
+display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡀⠀⣤⣤⣤⠀⣠⡀⠳⠦⠶⠞⢁⣾⣿⣿⣿⠀⣿⡇⠀⠀⠀⣿⡿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣟⣾⡟"
+display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣇⠀⣿⣿⣿⣤⣬⣤⣤⣤⣶⣾⣿⣿⣿⣿⣿⠠⠿⠟⠀⠀⠀⠀⢀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣽⣿⠃"
+display as text "⡇⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⠀⢿⣿⣿⣿⣿⣿⣿⣿⡿⠿⠟⠛⠋⠉⠀⢀⣠⣤⠀⠀⠀⢚⠭⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⡟⠀"
+display as text "⣇⠀⠀⠀⠀⠀⠀⠀⠀⠰⠿⠇⠘⠛⠛⠛⠉⠉⠁⢀⣀⣠⣤⣤⣶⣾⣿⡿⢛⣥⡆⠀⠀⢠⠊⢠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢼⣿⠁⠀"
+display as text "⣿⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⣒⠶⠿⠿⢿⣿⣿⣿⣿⣿⣿⣿⢀⣿⣏⡴⠀⢠⡜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠉⠀⠀"
+display as text "⣿⡇⠀⠀⠀⠀⠀⠀⠀⢸⠿⣋⡤⠽⠿⠻⠥⢭⣟⣳⣶⣝⠿⣿⣿⣿⣿⢸⡇⣿⣷⠀⢠⣤⣶⣿⡇⠀⠀⠀⠀⠀⠀⠀⢀⠁⠀⠀⠀⠀"
+display as text "⣿⣇⠀⠀⠀⠀⠀⠀⠀⠐⠛⢡⣴⢠⡏⠀⠄⠢⠀⢉⣻⡍⢷⣿⣿⣿⣿⢸⣷⣝⢿⡆⢸⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠄⠀⢠⠀⠀⠀"
+display as text "⣿⣿⠀⠀⠀⠀⠀⠀⠀⢸⣷⣌⠻⣧⠁⠤⠀⠀⣀⣤⣶⢇⣾⣿⣿⣿⣿⡟⣿⣿⣦⡁⢸⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠌⠀⠀⠰⠃⠀⠀"
+display as text "⣿⣿⡆⠀⠀⠀⠀⠀⠀⢸⣿⣿⣥⣴⣆⣤⣶⣿⣿⣿⡏⣼⣿⣿⣿⣿⣿⣇⣿⣿⣿⣇⣬⡻⣿⣿⡇⠀⠀⠀⠀⠀⠨⢀⠀⠀⠀⠀⠀⠀"
+display as text "⣿⣿⡇⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢱⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣮⠻⡇⠀⠀⠀⠀⠀⠅⡠⠀⠀⠀⠀⠀⠀"
+display as text "⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⠇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡄⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀"
+display as text "⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠘⢿⣿⣿⣿⣿⣿⡟⣼⣿⣿⣿⣿⣿⢿⣿⣿⣿⠿⣻⣿⣿⣿⣿⣿⡇⠀⠀⣀⠀⢈⠀⠀⠀⠀⠀⠀⠀⠀"
+display as text "⣿⣿⣿⡇⠀⡀⠀⠀⠀⠀⠀⠀⠈⢿⣿⣿⣿⣿⢇⣿⣿⣿⣿⣿⣿⣶⣭⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⢠⠀⢻⣧⠠⠀⠀⠀⠀⠀⠀⠀⠀"
+display as text "⣿⣿⣿⣧⠀⠇⠀⠀⠀⠀⢀⠀⠘⠤⢻⣿⣿⡿⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⣿⠀⠀⢻⣧⠀⠀⠀⠀⠀⠀⠀⠀"
+display as text "⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⢸⠀⠈⢀⠆⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠿⣟⣛⣭⣭⣭⣷⣿⢣⣿⠀⠀⠀⢻⣇⠀⠀⠀⠀⠀⠀⠀"
+display as text "⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⡄⠀⠈⠀⠀⠈⠻⢿⣿⣿⣿⣿⣿⣿⣯⣶⣾⠿⠿⣛⣻⣭⣼⣿⣿⣼⣿⠀⠀⠀⠈⣿⡀⠀⠀⠀⠀⠀⠀"
+display as text "⣿⣿⣿⣿⣷⠀⢲⠀⠀⡄⠀⠀⣸⠁⠀⠀⠀⠀⠀⣝⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠈⠀⠀⠀⠸⣷⠀⠀"
+display as text "⣿⣿⣿⣿⣿⡄⢸⠀⠀⣧⠀⠀⡏⠀⠀⠀⠀⠀⠀⢸⣿⡄⡝⠻⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠣⠀⠀⠀⡀⠀⢹⣇"
+display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿⣷⠹⢀⠤⡮⣙⠻⠿⣿⣿⣿⣿⠿⢋⠡⠀⢄⡀⠀⢀⠅⡊⣀⢻⡄"
+		
+		
+    // format
     local bg_color "#ffffff"
     local text_color "#000000"
     local border_color "#dddddd"
@@ -39,6 +60,31 @@ program define sharinganhtml, rclass
     if "`varlist'" == "" {
         quietly ds
         local varlist `r(varlist)'
+    }
+
+    // Create a local to store variables with missing values
+    local vars_with_missing ""
+    // Variables to store total missing calculations
+    local total_cells 0
+    local total_missing 0
+    
+    // Check for missing values in each variable if missing option is specified
+    if "`missing'" != "" {
+        qui count
+        local total_obs = r(N)
+        
+        foreach var of local varlist {
+            local total_cells = `total_cells' + `total_obs'
+            qui count if missing(`var')
+            local curr_missing = r(N)
+            local total_missing = `total_missing' + `curr_missing'
+            
+            if `curr_missing' > 0 {
+                local vars_with_missing "`vars_with_missing' `var'"
+            }
+        }
+        // If missing option is specified, only use variables with missing values
+        local varlist "`vars_with_missing'"
     }
 
     if "`title'" == "" {
@@ -82,7 +128,30 @@ program define sharinganhtml, rclass
         "<style>" _n ///
         "body {font-family: Arial, sans-serif; margin: 20px; background: `bg_color'; color: `text_color';}" _n ///
         "h1 {text-align: center;}" _n ///
-        "table {width: 95%; max-width: 1200px; margin: 20px auto; border-collapse: collapse;}" _n ///
+        ".container {max-width: 1200px; margin: 0 auto; position: relative;}" _n ///
+        ".copy-button {position: absolute; right: 0; top: -50px; padding: 8px 16px;" _n ///
+        "  background-color: #4CAF50; color: white; border: none; border-radius: 4px;" _n ///
+        "  cursor: pointer; font-size: 14px;}" _n ///
+        ".copy-btn {" _n ///
+        "    background-color: #4CAF50;" _n ///
+        "    border: none;" _n ///
+        "    color: white;" _n ///
+        "    padding: 10px 20px;" _n ///
+        "    text-align: center;" _n ///
+        "    text-decoration: none;" _n ///
+        "    display: inline-block;" _n ///
+        "    font-size: 16px;" _n ///
+        "    margin: 4px 2px;" _n ///
+        "    cursor: pointer;" _n ///
+        "    border-radius: 4px;" _n ///
+        "}" _n ///
+        ".copy-btn:hover {" _n ///
+        "    background-color: #45a049;" _n ///
+        "}" _n ///
+        ".copy-btn:active {" _n ///
+        "    background-color: #3d8b40;" _n ///
+        "}" _n ///
+        "table {width: 100%; border-collapse: collapse; margin: 20px 0;}" _n ///
         "th, td {border: 1px solid `border_color'; padding: 12px; text-align: left;}" _n ///
         "th {background: `header_bg'; font-weight: bold; text-align: center;}" _n ///
         "tr:nth-child(even) {background: `row_alt_bg';}" _n ///
@@ -90,17 +159,47 @@ program define sharinganhtml, rclass
         ".continuous-stats {font-style: italic;}" _n ///
         ".number {text-align: center;}" _n ///
         ".center {text-align: center;}" _n ///
+        ".summary-text {text-align: center; font-weight: bold; margin-top: 20px;}" _n ///
+        ".notification {display: none; position: fixed; top: 20px; right: 20px;" _n ///
+        "  background-color: #4CAF50; color: white; padding: 16px; border-radius: 4px;" _n ///
+        "  animation: fadeOut 2s ease-in-out forwards; animation-delay: 1s;}" _n ///
+        "@keyframes fadeOut {from {opacity: 1;} to {opacity: 0;}}" _n ///
         "@media print {" _n ///
         "  body {background: white; color: black;}" _n ///
         "  table {border: 1px solid black;}" _n ///
         "  th, td {border: 1px solid black;}" _n ///
+        "  .copy-button, .notification {display: none;}" _n ///
         "}" _n ///
         "@media (max-width: 600px) {" _n ///
         "  table {font-size: 14px;}" _n ///
         "  th, td {padding: 8px;}" _n ///
         "}" _n ///
-        "</style></head><body>" _n ///
+        "</style>" _n ///
+        "<script>" _n ///
+        "function copyTableToClipboard() {" _n ///
+        "    const table = document.querySelector('table');" _n ///
+        "    const range = document.createRange();" _n ///
+        "    range.selectNode(table);" _n ///
+        "    window.getSelection().removeAllRanges();" _n ///
+        "    window.getSelection().addRange(range);" _n ///
+        "    try {" _n ///
+        "        document.execCommand('copy');" _n ///
+        "        const btn = document.querySelector('.copy-btn');" _n ///
+        "        const originalText = btn.textContent;" _n ///
+        "        btn.textContent = 'Copied!';" _n ///
+        "        setTimeout(() => {" _n ///
+        "            btn.textContent = originalText;" _n ///
+        "        }, 2000);" _n ///
+        "    } catch (err) {" _n ///
+        "        console.error('Failed to copy table:', err);" _n ///
+        "    }" _n ///
+        "    window.getSelection().removeAllRanges();" _n ///
+        "}" _n ///
+        "</script>" _n ///
+        "</head><body>" _n ///
         "<h1>`title'</h1>" _n ///
+        "<div class='container'>" _n ///
+        "<button class='copy-btn' onclick='copyTableToClipboard()'>Copy Table</button>" _n ///
         "<table>" _n ///
         "<tr><th>Đặc điểm</th><th class='number'>Tần số</th><th class='number'>Tỷ lệ (%)</th></tr>" _n
 
@@ -145,89 +244,93 @@ program define sharinganhtml, rclass
                     "<td class='center' colspan='2'>`mean' ± `sd'</td></tr>" _n ///
                     "<tr><td class='continuous-stats'`indent_style'>Trung vị (IQR)</td>" ///
                     "<td class='center' colspan='2'>`med' (`p25' - `p75')</td></tr>" _n
+
+                // Add missing count for continuous variables
+                qui count if missing(`var')
+                local miss_count = r(N)
+                if `miss_count' > 0 {
+                    local miss_percent = string(100 * `miss_count'/`N', "%9.`digit'f")
+                    file write html_output "<tr><td class='continuous-stats'`indent_style'>Missing</td>" ///
+                        "<td class='number'>`miss_count'</td><td class='number'>`miss_percent' %</td></tr>" _n
+                }
             }
             else if strpos("`type'", "str") { // Biến chuỗi
                 qui tab `var', missing
                 local total_n = r(N)
-                local missing = r(N_miss)
 
-                quietly levelsof `var', local(all_values)
-                foreach val of local all_values {
-                    quietly count if `var' == `val'
-                    local f = r(N)
-                    local vl : label (`var') `val'
-                    if "`vl'" == "" {
-                        local vl "`val'"
-                    }
-                    local p = string(100 * `f'/`total_n', "%9.`digit'f")
-                    file write html_output "<tr><td`indent_style'>`vl'</td><td class='number'>`f'</td><td class='number'>`p' %</td></tr>" _n
-                }
-
-                if `missing' > 0 { 
-                    // Kiểm tra xem có giá trị missing nào được gán nhãn là "." hay không
-                    local missing_label : label (`var') .
-                    if "`missing_label'" != "" {
-                        local missing_display "`missing_label'" 
+                tempname temp_mat
+                tab `var', matcell(`temp_mat') missing
+                
+                local n_rows = rowsof(`temp_mat')
+                
+                quietly levelsof `var', local(categories) missing
+                local i = 1
+                foreach val in `categories' {
+                    local freq = `temp_mat'[`i',1]
+                    local p = string(100 * `freq'/`total_n', "%9.`digit'f")
+                    
+                    if missing("`val'") {
+                        local display_val "Missing"
                     }
                     else {
-                        local missing_display "" // Hiển thị ô trống nếu không có nhãn "."
+                        local display_val "`val'"
                     }
-
-                    local mp = string(100 * `missing'/`total_n', "%9.`digit'f")
-                    file write html_output "<tr><td`indent_style'>`missing_display'</td>" ///
-                        "<td class='number'>`missing'</td><td class='number'>`mp' %</td></tr>" _n
+                    
+                    file write html_output "<tr><td`indent_style'>`display_val'</td>" ///
+                        "<td class='number'>`freq'</td><td class='number'>`p' %</td></tr>" _n
+                    
+                    local ++i
                 }
             }
             else { // Biến phân loại
                 qui tab `var', missing
                 local total_n = r(N)
-                local missing = r(N_miss)
 
-                if r(N_miss) == 0 { // Không có missing
-                    qui tab `var', matcell(freq) matrow(values)
-                }
-                else { // Có missing, cần loại bỏ để sort chính xác
-                    qui tab `var' if !missing(`var'), matcell(freq) matrow(values)
-                }
-
-                if "`nosort'" == "" {
-                    mata: st_matrix("freq_sorted", sort((st_matrix("values"), st_matrix("freq")), -2))
-                    matrix values = freq_sorted[1...,1]
-                    matrix freq = freq_sorted[1...,2]
-                }
-
-                forvalues i = 1/`=rowsof(freq)' {
-                    local val = values[`i',1]
-                    local f = freq[`i',1]
-                    local p = string(100 * `f'/`total_n', "%9.`digit'f")
-
-                    if "`has_vallabel'" != "" {
-                        local vl : label (`var') `val'
-                        if "`vl'" != "" {
-                            file write html_output "<tr><td`indent_style'>`vl'</td>" ///
-                                "<td class='number'>`f'</td><td class='number'>`p' %</td></tr>" _n
+                tempname temp_mat
+                tab `var', matcell(`temp_mat') missing
+                
+                local n_rows = rowsof(`temp_mat')
+                
+                if "`has_vallabel'" != "" {
+                    quietly levelsof `var', local(categories) missing
+                    local i = 1
+                    foreach val in `categories' {
+                        local freq = `temp_mat'[`i',1]
+                        local p = string(100 * `freq'/`total_n', "%9.`digit'f")
+                        
+                        if missing(`val') {
+                            local display_val "Missing"
                         }
-                    }
-                    else {
-                        local vl = string(`val')
-                        file write html_output "<tr><td`indent_style'>`vl'</td>" ///
-                            "<td class='number'>`f'</td><td class='number'>`p' %</td></tr>" _n
+                        else {
+                            local vl : label (`var') `val'
+                            local display_val "`vl'"
+                        }
+                        
+                        file write html_output "<tr><td`indent_style'>`display_val'</td>" ///
+                            "<td class='number'>`freq'</td><td class='number'>`p' %</td></tr>" _n
+                        
+                        local ++i
                     }
                 }
-
-                if `missing' > 0 { 
-                    // Kiểm tra xem có giá trị missing nào được gán nhãn là "." hay không
-                    local missing_label : label (`var') .
-                    if "`missing_label'" != "" {
-                        local missing_display "`missing_label'" 
+                else {
+                    quietly levelsof `var', local(categories) missing
+                    local i = 1
+                    foreach val in `categories' {
+                        local freq = `temp_mat'[`i',1]
+                        local p = string(100 * `freq'/`total_n', "%9.`digit'f")
+                        
+                        if missing(`val') {
+                            local display_val "Missing"
+                        }
+                        else {
+                            local display_val = string(`val')
+                        }
+                        
+                        file write html_output "<tr><td`indent_style'>`display_val'</td>" ///
+                            "<td class='number'>`freq'</td><td class='number'>`p' %</td></tr>" _n
+                        
+                        local ++i
                     }
-                    else {
-                        local missing_display "" // Hiển thị ô trống nếu không có nhãn "."
-                    }
-
-                    local mp = string(100 * `missing'/`total_n', "%9.`digit'f")
-                    file write html_output "<tr><td`indent_style'>`missing_display'</td>" ///
-                        "<td class='number'>`missing'</td><td class='number'>`mp' %</td></tr>" _n
                 }
             }
         }
@@ -237,9 +340,18 @@ program define sharinganhtml, rclass
         }
     }
 
+    // Add overall missing percentage if missing option is specified
+    if "`missing'" != "" {
+        local total_missing_percent = string(100 * `total_missing'/`total_cells', "%9.`digit'f")
+        file write html_output "</table>" _n ///
+            "<div class='summary-text'>Tỷ lệ missing của toàn bộ dữ liệu: `total_missing_percent'%</div>" _n
+    }
+    else {
+        file write html_output "</table>" _n
+    }
+
     local timestamp = c(current_date) + " " + c(current_time)
-    file write html_output "</table>" _n ///
-        "<p><small>Được tạo lúc: `timestamp'</small></p>" _n ///
+    file write html_output "<p><small>Được tạo lúc: `timestamp'</small></p>" _n ///
         "</body></html>" _n
 
     file close html_output
