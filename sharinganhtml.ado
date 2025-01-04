@@ -356,8 +356,11 @@ display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿
 
     file close html_output
 
-    local fullpath = "file://" + c(pwd) + "/" + "`output'"
-    display as text _n "Đã lưu kết quả HTML. Nhấn vào đây để mở: {browse `fullpath'}"
+    local fullpath = "file:" + c(pwd) + "/" + "`output'"
+    display as text _n "Copy liên kết dán vào trình duyệt hoặc tìm nguồn mở file {browse `fullpath'}"
+    
+
+    shell start "" "`fullpath'"
 
     if "`autoopen'" != "" {
         shell start "`output'"
