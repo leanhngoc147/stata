@@ -110,13 +110,6 @@ Lệnh này tính toán tần số, phần trăm cho biến phân loại và tru
 {marker author}{...}
 {title:Tác giả}
 
-{pstd}Tên tác giả{p_end}
-{pstd}Email tác giả{p_end}
-
-{marker also_see}{...}
-{title:Xem thêm}
-
-
 Hãy cho tôi biết để tôi có thể hỗ trợ bạn tốt hơn: leanhngocump@gmail.com
 
 
@@ -128,3 +121,5 @@ Hãy cho tôi biết để tôi có thể hỗ trợ bạn tốt hơn: leanhngoc
         | Email           : leanhngocump@gmail.com                                                                          |
         | --> nếu bạn có nhu cầu hỗ trợ về phương pháp nghiên cứu hoặc phân tích số liệu, đừng ngại hãy gửi mail cho tôi <3 |
        +---------------------------------------------------------------------------------------------------------------------+
+{marker also_see}{...}
+{title:Xem thêm}
