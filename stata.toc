@@ -1,6 +1,55 @@
+v 3
 
-d Le anh ngoc
-p sharingan.pkg
-p sharinganhtml.pkg
-p whattest.pkg
-p rasenganhtml.pkg
+* Le Anh Ngoc's Statistical Commands
+d {bf:LE ANH NGOC'S STATISTICAL COMMANDS}
+d
+d Statistical commands for medical research and data analysis
+d
+d {bf:Author}      : Le Anh Ngoc
+d {bf:Institution} : University of Medicine and Pharmacy at Ho Chi Minh City
+d {bf:Email}       : leanhngocump@gmail.com
+d {bf:Date}        : January 04, 2025
+d
+d
+d {hline}
+d {bf:COMMANDS OVERVIEW}
+d {hline}
+d
+d {bf:1. Data Analysis Commands}
+d
+d {bf:sharingan} - Advanced cross-tabulation and statistical analysis
+d Cross-tabulation with comprehensive statistical tests and measures of association
+d
+d {bf:sharinganhtml} - HTML output for cross-tabulation analysis
+d Generate beautiful HTML tables for cross-tabulation results
+d
+d {bf:rasenganhtml} - Comparative analysis with HTML output
+d Create professional HTML tables for group comparisons with various statistical measures
+d
+d {bf:whattest} - Statistical test selection assistant
+d Intelligent guidance for choosing appropriate statistical tests
+d
+d {hline}
+d {bf:INSTALLATION INSTRUCTIONS}
+d {hline}
+d
+d To install all commands:
+d . {stata "net from https://raw.githubusercontent.com/leanhngoc/stata/master"}
+d . {stata "net install sharingan"}
+d . {stata "net install sharinganhtml"}
+d . {stata "net install rasenganhtml"}
+d . {stata "net install whattest"}
+d
+d {hline}
+d {bf:SUPPORT}
+d {hline}
+d
+d For research methodology and data analysis support,
+d please feel free to contact me via email: leanhngocump@gmail.com
+d
+d {hline}
+d
+f sharingan.pkg
+f sharinganhtml.pkg
+f whattest.pkg
+f rasenganhtml.pkg
