@@ -1,94 +1,121 @@
-.hlp rasenganhtml
 {smcl}
-{* *! version 1.0 2023.12.02}{...}
-{hline}
-{title:rasenganhtml}
-{p}
-{bf:Generates an HTML table summarizing descriptive statistics and association results.}
-{hline}
+{* *! version 1.0.0 16jan2025}{...}
+{title:Title}
 
-{title:Syntax}
-{p 8 18 2}
-{cmd:rasenganhtml} {varlist} [{cmd:if}] [{cmd:in}], {cmd:by(}{varname}{cmd:)}
-[{cmd:ib(}{it:integer 1}{cmd:)}] [{cmd:ratio(}{it:string}{cmd:)}] [{cmd:per(}{it:string}{cmd:)}]
-[{cmd:p(}{it:string}{cmd:)}] [{cmd:output(}{it:string}{cmd:)}] [{cmd:digit(}{it:integer 1}{cmd:)}]
-[{cmd:autoopen}] [{cmd:title(}{it:string}{cmd:)}] [{cmd:pnote(}{it:string}{cmd:)}] [{cmd:lang(}{it:string}{cmd:)}] [{cmd:N(}{it:string}{cmd:)}]
+{phang}
+{bf:rasenganhtml} {hline 2} Tạo bảng phân tích dữ liệu dưới dạng HTML
 
-{title:Description}
-{p}
-{cmd:rasenganhtml} generates an HTML table summarizing descriptive statistics and association results for a set of variables, broken down by a specified grouping variable. The HTML table includes:
-{ul}
-    {li} Descriptive statistics: Mean and standard deviation (for continuous variables), counts and percentages (for categorical variables) for each group.
-    {li} Comparisons: p-values from statistical tests (t-test for continuous variables, chi-square or Fisher's exact test for categorical variables).
-    {li} Association measure: Odds ratio (OR), risk ratio (RR), or prevalence ratio (PR) and their 95% confidence intervals.
-{ul}
+{marker syntax}{...}
+{title:Cú pháp}
 
+{p 8 17 2}
+{cmdab:rasenganhtml} {varlist} {ifin}{cmd:,} {opth by(varname)} [{it:options}]
 
-{title:Options}
-{p 8 18 2}
-{opt by(varname)} specifies the grouping variable.  The data will be analyzed separately for each group of this variable.
-{p 8 18 2}
-{opt ib(integer 1)} specifies the base category for categorical variables (default is {it:1}). Useful when categorical variables are not coded starting from 1.
-{p 8 18 2}
-{opt ratio(string)} specifies the type of ratio to be calculated:
-{ul}
-    {li} {cmd:OR} (Odds Ratio, default)
-    {li} {cmd:RR} (Risk Ratio)
-    {li} {cmd:PR} (Prevalence Ratio)
-{ul}
-{p 8 18 2}
-{opt per(string)} specifies how percentages are calculated:
-{ul}
-    {li} {cmd:row} (percentages based on row totals, default)
-    {li} {cmd:col} (percentages based on column totals)
-{ul}
-{p 8 18 2}
-{opt p(string)} : Placeholder for future purpose (currently unused).
-{p 8 18 2}
-{opt output(string)} specifies the output HTML filename. The default is {cmd:rasengan.html} or {cmd:rasengan_#.html} if a file with that name already exists.
-{p 8 18 2}
-{opt digit(integer 1)} specifies the number of decimal places for numeric values (default is {it:1}).
-{p 8 18 2}
-{opt autoopen} automatically opens the generated HTML file in a web browser after creation.
-{p 8 18 2}
-{opt title(string)} specifies the title of the HTML page.
-{p 8 18 2}
-{opt pnote(string)} If set to "TRUE", displays a footnote explaining which test is being used
-{p 8 18 2}
-{opt lang(string)} specifies the language of the output: {cmd:vie} (Vietnamese, default) or {cmd:eng} (English).
-{p 8 18 2}
-{opt N(string)}:  If set to "TRUE", the total sample size (N) for each variable will be shown in the table's variable label.
+{synoptset 20 tabbed}{...}
+{synopthdr}
+{synoptline}
+{syntab:Tùy chọn chính}
+{synopt:{opth by(varname)}}biến phân nhóm (nhị phân 0/1){p_end}
+{synopt:{opt ib(#)}}chọn nhóm tham chiếu (mặc định là 1){p_end}
+{synopt:{opt ratio(string)}}chọn tỷ số (OR/RR/PR, mặc định là OR){p_end}
+{synopt:{opt per(string)}}tính phần trăm theo hàng/cột (row/col, mặc định là row){p_end}
 
-{title:Examples}
-{p 8 18 2}
-{hline}
-{stata}
-* Load sample data
-sysuse auto, clear
+{syntab:Tùy chọn định dạng}
+{synopt:{opt output(string)}}tên file đầu ra (mặc định là rasengan.html){p_end}
+{synopt:{opt digit(#)}}số chữ số thập phân (mặc định là 1){p_end}
+{synopt:{opt title(string)}}tiêu đề của bảng{p_end}
+{synopt:{opt lang(string)}}ngôn ngữ (vie/eng, mặc định là vie){p_end}
+{synopt:{opt N(string)}}hiển thị số quan sát (TRUE/FALSE){p_end}
+{synopt:{opt pnote(string)}}thêm chú thích cho giá trị p (TRUE/FALSE){p_end}
+{synopt:{opt autoopen}}tự động mở file sau khi tạo{p_end}
 
-* Example 1: Basic analysis with default options
-rasenganhtml mpg price weight, by(foreign)
+{marker description}{...}
+{title:Mô tả}
 
-* Example 2: Calculating RR, saving output file with custom filename and using 2 digits, auto open
-rasenganhtml mpg price weight, by(foreign) ratio(RR) output(results_rr.html) digit(2) autoopen
+{pstd}
+{cmd:rasenganhtml} tạo bảng phân tích dữ liệu dưới dạng file HTML, so sánh các đặc điểm giữa hai nhóm. 
+Lệnh này tính toán tần số, phần trăm cho biến phân loại và trung bình ± độ lệch chuẩn cho biến liên tục. 
+Đồng thời tính toán giá trị p và các tỷ số (OR/RR/PR) với khoảng tin cậy 95%.
 
-* Example 3: Calculating OR, percentage by col, English language, display sample size
-rasenganhtml mpg price weight, by(foreign) ratio(OR) per(col) lang(eng) N(TRUE)
+{marker options}{...}
+{title:Tùy chọn}
 
-* Example 4: variable has values 0, 1, 2, change default base value
-gen value = 1
-replace value = 0 if rep78 <= 3
-replace value = 2 if rep78 == 5
-rasenganhtml mpg price weight value, by(foreign) ib(0)
+{dlgtab:Tùy chọn chính}
 
-* Example 5: Using an if statement
-rasenganhtml mpg price weight, by(foreign) if price > 5000
-{hline}
+{phang}
+{opt by(varname)} chỉ định biến phân nhóm nhị phân (0/1) để so sánh. Tùy chọn này là bắt buộc.
 
-{title:See Also}
-{p}
-{cmd:help summarize}, {cmd:help tabulate}, {cmd:help regress}, {cmd:help logistic}
-{smcl}
+{phang}
+{opt ib(#)} chỉ định nhóm tham chiếu khi tính toán tỷ số. Mặc định là 1.
+
+{phang}
+{opt ratio(string)} chỉ định loại tỷ số cần tính:
+{p_end}
+{phang2}- OR: Odds ratio (mặc định){p_end}
+{phang2}- RR: Risk ratio{p_end}
+{phang2}- PR: Prevalence ratio{p_end}
+
+{phang}
+{opt per(string)} chỉ định cách tính phần trăm:
+{p_end}
+{phang2}- row: tính theo hàng (mặc định){p_end}
+{phang2}- col: tính theo cột{p_end}
+
+{dlgtab:Tùy chọn định dạng}
+
+{phang}
+{opt output(string)} chỉ định tên file đầu ra. Mặc định là "rasengan.html".
+
+{phang}
+{opt digit(#)} chỉ định số chữ số thập phân cho các kết quả số. Mặc định là 1.
+
+{phang}
+{opt title(string)} chỉ định tiêu đề cho bảng kết quả.
+
+{phang}
+{opt lang(string)} chọn ngôn ngữ hiển thị (vie/eng). Mặc định là tiếng Việt.
+
+{phang}
+{opt N(string)} hiển thị số quan sát cho mỗi biến. Đặt "TRUE" để hiển thị.
+
+{phang}
+{opt pnote(string)} thêm chú thích cho giá trị p (kiểm định chi bình phương/Fisher). Đặt "TRUE" để hiển thị.
+
+{phang}
+{opt autoopen} tự động mở file HTML sau khi tạo.
+
+{marker examples}{...}
+{title:Ví dụ}
+
+{pstd}Tạo bảng phân tích cơ bản{p_end}
+{phang2}{cmd:. rasenganhtml tuoi gioitinh dieutri, by(nhom)}{p_end}
+
+{pstd}Tính tỷ số nguy cơ (RR) với phần trăm theo cột{p_end}
+{phang2}{cmd:. rasenganhtml tuoi gioitinh dieutri, by(nhom) ratio(RR) per(col)}{p_end}
+
+{pstd}Tùy chỉnh định dạng và ngôn ngữ{p_end}
+{phang2}{cmd:. rasenganhtml tuoi gioitinh dieutri, by(nhom) digit(2) title("Phân tích đặc điểm bệnh nhân") lang(vie) N(TRUE) pnote(TRUE)}{p_end}
+
+{marker results}{...}
+{title:Kết quả trả về}
+
+{pstd}
+{cmd:rasenganhtml} trả về các giá trị sau trong {cmd:r()}:
+
+{synoptset 20 tabbed}{...}
+{p2col 5 20 24 2: Macros}{p_end}
+{synopt:{cmd:r(output)}}tên file HTML đã tạo{p_end}
+{synopt:{cmd:r(timestamp)}}thời gian tạo file{p_end}
+
+{marker author}{...}
+{title:Tác giả}
+
+{pstd}Tên tác giả{p_end}
+{pstd}Email tác giả{p_end}
+
+{marker also_see}{...}
+{title:Xem thêm}
+
 
 Hãy cho tôi biết để tôi có thể hỗ trợ bạn tốt hơn: leanhngocump@gmail.com
 
