@@ -2,7 +2,7 @@ capture program drop rasenganhtml
 program define rasenganhtml, rclass
     syntax varlist [if] [in], by(varname) [ib(integer 1)] [ratio(string)] [per(string)] [p(string)] ///
         [output(string)] [digit(integer 1)] [autoopen] [title(string)] [pnote(string)] [lang(string)] [N(string)] [ptest(string)] ///
-        [pdigit(integer 3)] [ratiodigit(integer 2)]
+        [pdigit(integer 3)] [ratiodigit(integer 2)] [robust(string)]
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⡀⠑⠒⠀⠠⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⣘⠖⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠴⡖⠒⠒⠈⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀"
@@ -26,7 +26,7 @@ program define rasenganhtml, rclass
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⡀⠀⡎⡸⠀⠀⢸⠀⠀⠀⠀⢠⣀⠖⠖⠉⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢠⠃⠀⠀⣿⣶⣶⣶⣶⠖⠁⠀⠀⡄⠐⠃⠀⠀⠎⠀⠀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢁⠎⠀⠀⣸⠿⠟⠛⠛⢣⠀⢀⣴⡟⠁⠀⢀⣀⡠⢤⣀⣀⠀⠀⠀⠀⠀⠀⠀   "
-		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⠎⠀⡀⣠⡿⠒⠢⡀⣠⠎⠀⢸⡏⠀⢀⠴⣯⣅⢀⢀⡉⣀⠀⣀⣨⣿⣿⣿⣿   "			
+		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⠎⠀⡀⣠⡿⠒⠢⡀⣠⠎⠀⢸⡏⠀⢀⠴⣯⣅⢀⢀⡉⣀⠀⣀⣨⣿⣿⣿⣿   "	
     if "`lang'" == "" local lang "vie"
     local lang = lower("`lang'")
     if !inlist("`lang'", "vie", "eng") {
@@ -46,6 +46,19 @@ program define rasenganhtml, rclass
     if !inlist("`per'", "row", "col") {
         display as error "per() phải là row hoặc col"
         exit 198
+    }
+    
+    // Validate robust option
+    local use_robust = 0
+    if "`robust'" != "" {
+        local robust = lower("`robust'")
+        if "`robust'" == "true" {
+            local use_robust = 1
+        }
+        else if "`robust'" != "false" {
+            display as error "robust() phải là true hoặc false"
+            exit 198
+        }
     }
     
     // Validate ptest option
@@ -484,7 +497,12 @@ program define rasenganhtml, rclass
                 
                 // Calculate ratio based on selected method (OR, RR, PR)
                 if "`ratio'" == "OR" {
-                    qui logistic `by' `var'
+                    if `use_robust' {
+                        qui logistic `by' `var', vce(robust)
+                    }
+                    else {
+                        qui logistic `by' `var'
+                    }
                     local beta = _b[`var']
                     local se = _se[`var']
                     
@@ -495,7 +513,12 @@ program define rasenganhtml, rclass
                     local ratio_val = string(`or', "%9.2f") + " (" + string(`or_lb', "%9.2f") + "-" + string(`or_ub', "%9.2f") + ")"
                 }
                 else if "`ratio'" == "RR" {
-                    qui poisson `by' `var', irr
+                    if `use_robust' {
+                        qui poisson `by' `var', irr vce(robust)
+                    }
+                    else {
+                        qui poisson `by' `var', irr
+                    }
                     local beta = _b[`var']
                     local se = _se[`var']
                     
@@ -506,7 +529,12 @@ program define rasenganhtml, rclass
                     local ratio_val = string(`rr', "%9.2f") + " (" + string(`rr_lb', "%9.2f") + "-" + string(`rr_ub', "%9.2f") + ")"
                 }
                 else if "`ratio'" == "PR" {
-                    qui poisson `by' `var', irr
+                    if `use_robust' {
+                        qui poisson `by' `var', irr vce(robust)
+                    }
+                    else {
+                        qui poisson `by' `var', irr
+                    }
                     local beta = _b[`var']
                     local se = _se[`var']
                     
@@ -667,13 +695,28 @@ program define rasenganhtml, rclass
                 
                 capture {
                     if "`ratio'" == "OR" {
-                        qui logistic `by' `temp_var'
+                        if `use_robust' {
+                            qui logistic `by' `temp_var', vce(robust)
+                        }
+                        else {
+                            qui logistic `by' `temp_var'
+                        }
                     }
                     else if "`ratio'" == "RR" {
-                        qui poisson `by' `temp_var', irr
+                        if `use_robust' {
+                            qui poisson `by' `temp_var', irr vce(robust)
+                        }
+                        else {
+                            qui poisson `by' `temp_var', irr
+                        }
                     }
                     else {
-                        qui glm `by' `temp_var', family(poisson) link(log) eform
+                        if `use_robust' {
+                            qui glm `by' `temp_var', family(poisson) link(log) eform vce(robust)
+                        }
+                        else {
+                            qui glm `by' `temp_var', family(poisson) link(log) eform
+                        }
                     }
                     
                     if _rc == 0 {
@@ -737,7 +780,11 @@ program define rasenganhtml, rclass
         // Dynamic footnotes - only show those that were used
         file write `hh' "<p class='footnote'>" _n
         if strpos("`used_notes'", "a") > 0 {
-            file write `hh' "a: `footnote_a'<br>" _n
+            file write `hh' "a: `footnote_a'"
+            if `use_robust' {
+                file write `hh' " with robust standard error"
+            }
+            file write `hh' "<br>" _n
         }
         if strpos("`used_notes'", "b") > 0 {
             file write `hh' "b: `footnote_b'<br>" _n
