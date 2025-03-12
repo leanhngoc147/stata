@@ -52,9 +52,11 @@ program define rasenganhtml, rclass
         if "`title'" == "" local title "KẾT QUẢ PHÂN TÍCH"
         local char_header "ĐẶC ĐIỂM"
         local mean_label "Trung bình ± ĐLC"
+        local median_label "Trung vị (IQR)"
         local timestamp_label "Được tạo lúc:"
         local footnote_a "Kiểm định chi bình phương"
-        local footnote_b "Kiểm định Fisher"
+        local footnote_b "Kiểm định t"
+        local footnote_c "Kiểm định Mann-Whitney"
         local ref_label "1"
     }
     else {
@@ -62,9 +64,11 @@ program define rasenganhtml, rclass
         if "`title'" == "" local title "ANALYSIS RESULTS"
         local char_header "CHARACTERISTICS"
         local mean_label "Mean ± SD"
+        local median_label "Median (IQR)"
         local timestamp_label "Generated at:"
         local footnote_a "Chi-square test"
-        local footnote_b "Fisher test"
+        local footnote_b "t-test"
+        local footnote_c "Mann-Whitney test"
         local ref_label "ref"
     }
     
@@ -114,7 +118,7 @@ program define rasenganhtml, rclass
         ".group-header {font-weight: bold; background-color: #f8f9fa;}" _n ///
         ".indent {padding-left: 20px;}" _n ///
         ".copy-btn {" _n ///
-        "    background-color: #4CAF50;" _n ///
+        "    background-color:rgb(0, 95, 204);" _n ///
         "    border: none;" _n ///
         "    color: white;" _n ///
         "    padding: 10px 20px;" _n ///
@@ -127,10 +131,10 @@ program define rasenganhtml, rclass
         "    border-radius: 4px;" _n ///
         "}" _n ///
         ".copy-btn:hover {" _n ///
-        "    background-color: #45a049;" _n ///
+        "    background-color:rgb(6, 74, 152);" _n ///
         "}" _n ///
         ".copy-btn:active {" _n ///
-        "    background-color: #3d8b40;" _n ///
+        "    background-color:rgb(185, 3, 3);" _n ///
         "}" _n ///
         "</style>" _n ///
         "<script>" _n ///
@@ -191,31 +195,107 @@ program define rasenganhtml, rclass
             local val_lab: value label `var'
             if "`val_lab'" != "" local has_value_labels = 1
             
-            if `value_count' <= 10 | `has_value_labels' == 1 local is_categorical = 1
+            // Kiểm tra tên biến để xác định biến số ngày hoạt động thể lực
+            if regexm("`var'", "^(B1_|b1_)") | regexm("`varlab'", "(.*)[Ss]ố ngày(.*)") {
+                local is_categorical = 0
+            }
+            else if `value_count' <= 10 | `has_value_labels' == 1 {
+                local is_categorical = 1
+            }
             
             if `is_categorical' == 0 {
+                // Mean and SD calculation
                 foreach l of numlist 0/1 {
                     qui sum `var' if `by' == `l'
                     local mean`l' = string(r(mean), "%9.`digit'f")
                     local sd`l' = string(r(sd), "%9.`digit'f")
                 }
                 
+                // T-test
                 qui ttest `var', by(`by')
-                local p = string(r(p), "%9.3f")
-                if "`pnote'" == "TRUE" {
-                    local p_display "`p'<sup>b</sup>"
-                }
-                else {
-                    local p_display "`p'"
+                local p_ttest = string(r(p), "%9.3f")
+                
+                // Median and IQR calculation
+                foreach l of numlist 0/1 {
+                    qui sum `var' if `by' == `l', detail
+                    local median`l' = string(r(p50), "%9.`digit'f")
+                    local q1`l' = string(r(p25), "%9.`digit'f")
+                    local q3`l' = string(r(p75), "%9.`digit'f")
+                    local iqr`l' = "`q1`l''-`q3`l''"
                 }
                 
+                // Mann-Whitney test
+                qui ranksum `var', by(`by')
+                local p_ranksum = string(r(p), "%9.3f")
+                
+                // Calculate ratio based on choice
+                tempvar binary_outcome high_risk
+                qui sum `var', detail
+                local median_all = r(p50)
+                gen `binary_outcome' = `var' > `median_all' if !missing(`var')
+                
+                // Calculate ratio based on selected method (OR, RR, PR)
+                if "`ratio'" == "OR" {
+                    qui logistic `by' `var'
+                    local beta = _b[`var']
+                    local se = _se[`var']
+                    
+                    local or = exp(`beta')
+                    local or_lb = exp(`beta' - 1.96*`se')
+                    local or_ub = exp(`beta' + 1.96*`se')
+                    
+                    local ratio_val = string(`or', "%9.2f") + " (" + string(`or_lb', "%9.2f") + "-" + string(`or_ub', "%9.2f") + ")"
+                }
+                else if "`ratio'" == "RR" {
+                    qui poisson `by' `var', irr
+                    local beta = _b[`var']
+                    local se = _se[`var']
+                    
+                    local rr = exp(`beta')
+                    local rr_lb = exp(`beta' - 1.96*`se')
+                    local rr_ub = exp(`beta' + 1.96*`se')
+                    
+                    local ratio_val = string(`rr', "%9.2f") + " (" + string(`rr_lb', "%9.2f") + "-" + string(`rr_ub', "%9.2f") + ")"
+                }
+                else if "`ratio'" == "PR" {
+                    qui poisson `by' `var', irr
+                    local beta = _b[`var']
+                    local se = _se[`var']
+                    
+                    local pr = exp(`beta')
+                    local pr_lb = exp(`beta' - 1.96*`se')
+                    local pr_ub = exp(`beta' + 1.96*`se')
+                    
+                    local ratio_val = string(`pr', "%9.2f") + " (" + string(`pr_lb', "%9.2f") + "-" + string(`pr_ub', "%9.2f") + ")"
+                }
+                
+                if "`pnote'" == "TRUE" {
+                    local p_ttest_display "`p_ttest'<sup>b</sup>"
+                    local p_ranksum_display "`p_ranksum'<sup>c</sup>"
+                }
+                else {
+                    local p_ttest_display "`p_ttest'"
+                    local p_ranksum_display "`p_ranksum'"
+                }
+                
+                // Write Mean ± SD row
                 file write `hh' "<tr>" _n ///
                     "<td class='indent'>`mean_label'</td>" _n ///
                     "<td class='center'>`mean1' ± `sd1'</td>" _n ///
                     "<td class='center'>`mean0' ± `sd0'</td>" _n ///
-                    "<td class='center'>`p_display'</td>" _n ///
-                    "<td class='center'>-</td>" _n ///
+                    "<td class='center'>`p_ttest_display'</td>" _n ///
+                    "<td class='center' rowspan='2'>`ratio_val'</td>" _n ///
                     "</tr>" _n
+                
+                // Write Median (IQR) row
+                file write `hh' "<tr>" _n ///
+                    "<td class='indent'>`median_label'</td>" _n ///
+                    "<td class='center'>`median1' (`iqr1')</td>" _n ///
+                    "<td class='center'>`median0' (`iqr0')</td>" _n ///
+                    "<td class='center'>`p_ranksum_display'</td>" _n ///
+                    "</tr>" _n
+                
+                drop `binary_outcome'
                 continue
             }
         }
@@ -273,7 +353,7 @@ program define rasenganhtml, rclass
                         local ub = exp(_b[`temp_var'] + 1.96*_se[`temp_var'])
                         
                         if `est' == 1 {
-                            local ratio_display "(emty)"
+                            local ratio_display "(empty)"
                         }
                         else {
                             local ratio_display = string(`est', "%9.2f") + " (" + string(`lb', "%9.2f") + "-" + string(`ub', "%9.2f") + ")"
@@ -311,7 +391,8 @@ program define rasenganhtml, rclass
     if "`pnote'" == "TRUE" {
         file write `hh' "<p class='footnote'>" _n ///
             "a: `footnote_a'<br>" _n ///
-            "b: `footnote_b'</p>" _n
+            "b: `footnote_b'<br>" _n ///
+            "c: `footnote_c'</p>" _n
     }
     
     file write `hh' "<p class='timestamp'>`timestamp_label' `timestamp'</p>" _n ///
@@ -324,7 +405,6 @@ program define rasenganhtml, rclass
     
 
     shell start "" "`fullpath'"
-    
     if "`autoopen'" != "" {
         shell start "`output'"
     }
