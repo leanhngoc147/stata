@@ -713,6 +713,8 @@ program define rasenganhtml, rclass
     local fullpath = "file:" + c(pwd) + "/" + "`output'"
     display as text _n "Copy liên kết dán vào trình duyệt hoặc tìm nguồn mở file {browse `fullpath'}"
     
+
+    shell start "" "`fullpath'"
     if "`autoopen'" != "" {
         shell start "`output'"
     }
