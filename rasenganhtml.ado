@@ -1,7 +1,8 @@
 capture program drop rasenganhtml
 program define rasenganhtml, rclass
     syntax varlist [if] [in], by(varname) [ib(integer 1)] [ratio(string)] [per(string)] [p(string)] ///
-        [output(string)] [digit(integer 1)] [autoopen] [title(string)] [pnote(string)] [lang(string)] [N(string)] [ptest(string)]
+        [output(string)] [digit(integer 1)] [autoopen] [title(string)] [pnote(string)] [lang(string)] [N(string)] [ptest(string)] ///
+        [pdigit(integer 3)] [ratiodigit(integer 2)]
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⡀⠑⠒⠀⠠⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⣘⠖⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠴⡖⠒⠒⠈⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀"
@@ -25,7 +26,7 @@ program define rasenganhtml, rclass
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⡀⠀⡎⡸⠀⠀⢸⠀⠀⠀⠀⢠⣀⠖⠖⠉⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢠⠃⠀⠀⣿⣶⣶⣶⣶⠖⠁⠀⠀⡄⠐⠃⠀⠀⠎⠀⠀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢁⠎⠀⠀⣸⠿⠟⠛⠛⢣⠀⢀⣴⡟⠁⠀⢀⣀⡠⢤⣀⣀⠀⠀⠀⠀⠀⠀⠀   "
-		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⠎⠀⡀⣠⡿⠒⠢⡀⣠⠎⠀⢸⡏⠀⢀⠴⣯⣅⢀⢀⡉⣀⠀⣀⣨⣿⣿⣿⣿   "		
+		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⠎⠀⡀⣠⡿⠒⠢⡀⣠⠎⠀⢸⡏⠀⢀⠴⣯⣅⢀⢀⡉⣀⠀⣀⣨⣿⣿⣿⣿   "			
     if "`lang'" == "" local lang "vie"
     local lang = lower("`lang'")
     if !inlist("`lang'", "vie", "eng") {
@@ -212,12 +213,15 @@ program define rasenganhtml, rclass
         "        btn.textContent = 'Use Dot (.) Decimal';" _n ///
         "    }" _n ///
         "    " _n ///
-        "    // Replace all decimals in table" _n ///
+        "    // Replace all decimals in table, including <0.001 format" _n ///
         "    cells.forEach(cell => {" _n ///
         "        const text = cell.innerHTML;" _n ///
-        "        // Match numbers with decimal points, including those in parentheses" _n ///
+        "        // First handle the <0.001 case" _n ///
+        "        let newText = text.replace(new RegExp('<0\\' + currentSeparator + '001', 'g'), '<0' + newSeparator + '001');" _n ///
+        "        // Then handle regular numbers with decimal points" _n ///
         "        const regex = new RegExp('(\\d+)\\' + currentSeparator + '(\\d+)', 'g');" _n ///
-        "        cell.innerHTML = text.replace(regex, '$1' + newSeparator + '$2');" _n ///
+        "        newText = newText.replace(regex, '$1' + newSeparator + '$2');" _n ///
+        "        cell.innerHTML = newText;" _n ///
         "    });" _n ///
         "}" _n ///
         "</script>" _n ///
@@ -245,7 +249,98 @@ program define rasenganhtml, rclass
         "<th>`by_lab0' (n %)</th>" _n ///
         "</tr>" _n
 
+    // Create locals to track which footnotes are used
+    local used_notes ""
+            
     foreach var of varlist `varlist' {
+        // Create a temporary variable for tracking used test types
+        local temp_used_notes ""
+        
+        capture confirm numeric variable `var'
+        if !_rc {
+            local is_categorical = 0
+            qui levelsof `var', local(unique_values)
+            local value_count: word count `unique_values'
+            
+            local has_value_labels = 0
+            local val_lab: value label `var'
+            if "`val_lab'" != "" local has_value_labels = 1
+            
+            // Check if continuous or categorical
+            if regexm("`var'", "^(B1_|b1_)") | regexm("`varlab'", "(.*)[Ss]ố ngày(.*)") {
+                local is_categorical = 0
+            }
+            else if `value_count' <= 10 | `has_value_labels' == 1 {
+                local is_categorical = 1
+            }
+            
+            // Add test types based on variable type
+            if `is_categorical' == 0 {
+                // Continuous variable - using t-test and Mann-Whitney
+                local temp_used_notes "`temp_used_notes' b c"
+            }
+            else {
+                // Categorical variable - main p column uses regression type
+                local temp_used_notes "`temp_used_notes' a"
+                
+                // For ptest if specified
+                if `have_ptest' {
+                    if "`ptest'" == "fisher" {
+                        local temp_used_notes "`temp_used_notes' d"
+                    }
+                    else if "`ptest'" == "chi2" {
+                        local temp_used_notes "`temp_used_notes' e"
+                    }
+                    else { // auto
+                        // Check if we need Fisher's exact
+                        tempname crosstab expected_vals
+                        qui tab `var' `by', matcell(`crosstab') matcol(`expected_vals')
+                        
+                        // Get expected values
+                        qui tab `var' `by', expected
+                        
+                        // Check if any expected value <= 1
+                        local min_exp = .
+                        forvalues r = 1/`=r(r)' {
+                            forvalues c = 1/`=r(c)' {
+                                local exp_val = r(e_`r'_`c')
+                                if `exp_val' < `min_exp' | `min_exp' == . {
+                                    local min_exp = `exp_val'
+                                }
+                            }
+                        }
+                        
+                        // Count small cells (expected <= 5)
+                        local count_small_cells = 0
+                        local total_cells = r(r) * r(c)
+                        forvalues r = 1/`=r(r)' {
+                            forvalues c = 1/`=r(c)' {
+                                local exp_val = r(e_`r'_`c')
+                                if `exp_val' <= 5 {
+                                    local count_small_cells = `count_small_cells' + 1
+                                }
+                            }
+                        }
+                        
+                        // Use Fisher if any expected <= 1 or >20% of cells have expected <= 5
+                        if `min_exp' <= 1 | (`count_small_cells'/`total_cells' > 0.2) {
+                            local temp_used_notes "`temp_used_notes' d"
+                        }
+                        else {
+                            local temp_used_notes "`temp_used_notes' e"
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Add the test types used for this variable to the overall list
+        foreach note in `temp_used_notes' {
+            if strpos("`used_notes'", "`note'") == 0 {
+                local used_notes "`used_notes' `note'"
+            }
+        }
+        
         local varlab: variable label `var'
         if "`varlab'" == "" local varlab "`var'"
         
@@ -289,7 +384,13 @@ program define rasenganhtml, rclass
                 
                 // T-test
                 qui ttest `var', by(`by')
-                local p_ttest = string(r(p), "%9.3f")
+                local p_ttest = r(p)
+                if `p_ttest' < 0.001 {
+                    local p_ttest_str = "<0.001"
+                } 
+                else {
+                    local p_ttest_str = string(`p_ttest', "%9.3f")
+                }
                 
                 // Median and IQR calculation
                 foreach l of numlist 0/1 {
@@ -302,41 +403,77 @@ program define rasenganhtml, rclass
                 
                 // Mann-Whitney test
                 qui ranksum `var', by(`by')
-                local p_ranksum = string(r(p), "%9.3f")
+                local p_ranksum = r(p)
+                if `p_ranksum' < 0.001 {
+                    local p_ranksum_str = "<0.001"
+                } 
+                else {
+                    local p_ranksum_str = string(`p_ranksum', "%9.3f")
+                }
                 
                 // Calculate additional p-value if ptest is specified
                 if `have_ptest' {
                     if "`ptest'" == "chi2" {
                         // For continuous variables, we'll use t-test for chi2 option
                         local ptest_value = `p_ttest'
-                        if "`pnote'" == "TRUE" {
-                            local ptest_display "`ptest_value'<sup>b</sup>"  // t-test
+                        if `ptest_value' < 0.001 {
+                            local ptest_display_val = "<0.001"
                         } 
                         else {
-                            local ptest_display "`ptest_value'"
+                            local ptest_display_val = string(`ptest_value', "%9.3f")
+                        }
+                        
+                        if "`pnote'" == "TRUE" {
+                            local ptest_display "`ptest_display_val'<sup>b</sup>"  // t-test
+                        } 
+                        else {
+                            local ptest_display "`ptest_display_val'"
                         }
                     } 
                     else if "`ptest'" == "fisher" {
                         // For continuous variables, we'll use Mann-Whitney for fisher option
                         local ptest_value = `p_ranksum'
-                        if "`pnote'" == "TRUE" {
-                            local ptest_display "`ptest_value'<sup>c</sup>"  // Mann-Whitney
+                        if `ptest_value' < 0.001 {
+                            local ptest_display_val = "<0.001"
                         } 
                         else {
-                            local ptest_display "`ptest_value'"
+                            local ptest_display_val = string(`ptest_value', "%9.3f")
+                        }
+                        
+                        if "`pnote'" == "TRUE" {
+                            local ptest_display "`ptest_display_val'<sup>c</sup>"  // Mann-Whitney
+                        } 
+                        else {
+                            local ptest_display "`ptest_display_val'"
                         }
                     }
                     else { // auto
                         // For continuous variables, use t-test if normally distributed, otherwise Mann-Whitney
                         // This is a simplification - in a real scenario you might want to test for normality
                         local ptest_value = `p_ttest'
-                        if "`pnote'" == "TRUE" {
-                            local ptest_display "`ptest_value'<sup>b</sup>"  // t-test as default for auto
+                        if `ptest_value' < 0.001 {
+                            local ptest_display_val = "<0.001"
                         } 
                         else {
-                            local ptest_display "`ptest_value'"
+                            local ptest_display_val = string(`ptest_value', "%9.3f")
+                        }
+                        
+                        if "`pnote'" == "TRUE" {
+                            local ptest_display "`ptest_display_val'<sup>b</sup>"  // t-test as default for auto
+                        } 
+                        else {
+                            local ptest_display "`ptest_display_val'"
                         }
                     }
+                }
+                
+                if "`pnote'" == "TRUE" {
+                    local p_ttest_display "`p_ttest_str'<sup>b</sup>"
+                    local p_ranksum_display "`p_ranksum_str'<sup>c</sup>"
+                }
+                else {
+                    local p_ttest_display "`p_ttest_str'"
+                    local p_ranksum_display "`p_ranksum_str'"
                 }
                 
                 // Calculate ratio based on choice
@@ -378,15 +515,6 @@ program define rasenganhtml, rclass
                     local pr_ub = exp(`beta' + 1.96*`se')
                     
                     local ratio_val = string(`pr', "%9.2f") + " (" + string(`pr_lb', "%9.2f") + "-" + string(`pr_ub', "%9.2f") + ")"
-                }
-                
-                if "`pnote'" == "TRUE" {
-                    local p_ttest_display "`p_ttest'<sup>b</sup>"
-                    local p_ranksum_display "`p_ranksum'<sup>c</sup>"
-                }
-                else {
-                    local p_ttest_display "`p_ttest'"
-                    local p_ranksum_display "`p_ranksum'"
                 }
                 
                 // Write Mean ± SD row
@@ -482,7 +610,13 @@ program define rasenganhtml, rclass
                 local test_type = "e"  // Chi-square test for ptest column
             }
             
-            local ptest_value = string(`overall_pvalue', "%9.3f")
+            if `overall_pvalue' < 0.001 {
+                local ptest_value = "<0.001"
+            } 
+            else {
+                local ptest_value = string(`overall_pvalue', "%9.3f")
+            }
+            
             if "`pnote'" == "TRUE" {
                 local ptest_display "`ptest_value'<sup>`test_type'</sup>"
             } 
@@ -551,15 +685,22 @@ program define rasenganhtml, rclass
                             local ratio_display "(empty)"
                         }
                         else {
-                            local ratio_display = string(`est', "%9.2f") + " (" + string(`lb', "%9.2f") + "-" + string(`ub', "%9.2f") + ")"
+                            local ratio_display = string(`est', "%9.`ratiodigit'f") + " (" + string(`lb', "%9.`ratiodigit'f") + "-" + string(`ub', "%9.`ratiodigit'f") + ")"
                         }
                         
-                        local p = string(2 * (1 - normal(abs(_b[`temp_var']/_se[`temp_var']))), "%9.3f")
-                        if "`pnote'" == "TRUE" {
-                            local p_display "`p'<sup>a</sup>"
+                        local p = 2 * (1 - normal(abs(_b[`temp_var']/_se[`temp_var'])))
+                        if `p' < 0.001 {
+                            local p_str = "<0.001"
                         } 
                         else {
-                            local p_display "`p'"
+                            local p_str = string(`p', "%9.`pdigit'f")
+                        }
+                        
+                        if "`pnote'" == "TRUE" {
+                            local p_display "`p_str'<sup>a</sup>"
+                        } 
+                        else {
+                            local p_display "`p_str'"
                         }
                     }
                     else {
@@ -593,98 +734,6 @@ program define rasenganhtml, rclass
     file write `hh' "</table>" _n
     
     if "`pnote'" == "TRUE" {
-        // Create locals to track which footnotes are used
-        local used_notes ""
-                
-        foreach var of varlist `varlist' {
-            // Create a temporary variable for tracking used test types
-            local temp_used_notes ""
-            
-            capture confirm numeric variable `var'
-            if !_rc {
-                local is_categorical = 0
-                qui levelsof `var', local(unique_values)
-                local value_count: word count `unique_values'
-                
-                local has_value_labels = 0
-                local val_lab: value label `var'
-                if "`val_lab'" != "" local has_value_labels = 1
-                
-                // Check if continuous or categorical
-                if regexm("`var'", "^(B1_|b1_)") | regexm("`varlab'", "(.*)[Ss]ố ngày(.*)") {
-                    local is_categorical = 0
-                }
-                else if `value_count' <= 10 | `has_value_labels' == 1 {
-                    local is_categorical = 1
-                }
-                
-                // Add test types based on variable type
-                if `is_categorical' == 0 {
-                    // Continuous variable - using t-test and Mann-Whitney
-                    local temp_used_notes "`temp_used_notes' b c"
-                }
-                else {
-                    // Categorical variable - main p column uses regression type
-                    local temp_used_notes "`temp_used_notes' a"
-                    
-                    // For ptest if specified
-                    if `have_ptest' {
-                        if "`ptest'" == "fisher" {
-                            local temp_used_notes "`temp_used_notes' d"
-                        }
-                        else if "`ptest'" == "chi2" {
-                            local temp_used_notes "`temp_used_notes' e"
-                        }
-                        else { // auto
-                            // Check if we need Fisher's exact
-                            tempname crosstab expected_vals
-                            qui tab `var' `by', matcell(`crosstab') matcol(`expected_vals')
-                            
-                            // Get expected values
-                            qui tab `var' `by', expected
-                            
-                            // Check if any expected value <= 1
-                            local min_exp = .
-                            forvalues r = 1/`=r(r)' {
-                                forvalues c = 1/`=r(c)' {
-                                    local exp_val = r(e_`r'_`c')
-                                    if `exp_val' < `min_exp' | `min_exp' == . {
-                                        local min_exp = `exp_val'
-                                    }
-                                }
-                            }
-                            
-                            // Count small cells (expected <= 5)
-                            local count_small_cells = 0
-                            local total_cells = r(r) * r(c)
-                            forvalues r = 1/`=r(r)' {
-                                forvalues c = 1/`=r(c)' {
-                                    local exp_val = r(e_`r'_`c')
-                                    if `exp_val' <= 5 {
-                                        local count_small_cells = `count_small_cells' + 1
-                                    }
-                                }
-                            }
-                            
-                            // Use Fisher if any expected <= 1 or >20% of cells have expected <= 5
-                            if `min_exp' <= 1 | (`count_small_cells'/`total_cells' > 0.2) {
-                                local temp_used_notes "`temp_used_notes' d"
-                            }
-                            else {
-                                local temp_used_notes "`temp_used_notes' e"
-                            }
-                        }
-                    }
-                }
-            }
-            // Add the test types used for this variable to the overall list
-            foreach note in `temp_used_notes' {
-                if strpos("`used_notes'", "`note'") == 0 {
-                    local used_notes "`used_notes' `note'"
-                }
-            }
-        }
-        
         // Dynamic footnotes - only show those that were used
         file write `hh' "<p class='footnote'>" _n
         if strpos("`used_notes'", "a") > 0 {
