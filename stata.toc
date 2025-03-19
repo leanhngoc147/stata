@@ -34,8 +34,8 @@ d {bf:INSTALLATION INSTRUCTIONS}
 d {hline}
 d
 d To install all commands:
-d . {stata "net from https://raw.githubusercontent.com/leanhngoc/stata/master"}
-d . {stata "net install sharingan"}
+d . {stata "net from https://raw.githubusercontent.com/leanhngoc/stata/master"} (cập nhập câu lệnh)
+d . {stata "net install sharingan"} (câu lệnh tạo bảng thống kê mô tả)
 d . {stata "net install sharinganhtml"}
 d . {stata "net install rasenganhtml"}
 d . {stata "net install whattest"}
