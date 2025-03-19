@@ -39,6 +39,7 @@ d . {stata "net install sharingan"}
 d . {stata "net install sharinganhtml"}
 d . {stata "net install rasenganhtml"}
 d . {stata "net install whattest"}
+d . {stata "net install lecodebook"}
 d
 d {hline}
 d {bf:SUPPORT}
