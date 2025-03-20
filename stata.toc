@@ -33,13 +33,27 @@ d {hline}
 d {bf:INSTALLATION INSTRUCTIONS}
 d {hline}
 d
-d To install all commands:
-d . {stata "net from https://raw.githubusercontent.com/leanhngoc/stata/master"}
-d . {stata "net install sharingan"}
-d . {stata "net install sharinganhtml"}
-d . {stata "net install rasenganhtml"}
-d . {stata "net install whattest"}
-d
+d Bấm vào để cài đặt câu lệnh:
+
+d +------------------------------------------------------------------------------------+
+d |   {stata "net install sharingan"}           |  câu lệnh tạo bảng thống kê mô tả              |
+d +------------------------------------------------------------------------------------+
+d +------------------------------------------------------------------------------------+
+d |   {stata "net install sharinganhtml"}       |  Câu lệnh tạo file html bảng thống kê mô tả    |
+d +------------------------------------------------------------------------------------+
+d +------------------------------------------------------------------------------------+
+d |   {stata "net install rasenganhtml"}        |  Câu lệnh tạo file html bảng thống kê phân tích|
+d +------------------------------------------------------------------------------------+
+d +------------------------------------------------------------------------------------+
+d |   {stata "net install whattest"}            |  Câu lệnh tìm kiểm định phù hợp                |
+d +------------------------------------------------------------------------------------+
+d +------------------------------------------------------------------------------------+
+d |   {stata "net install lecodebook"}          |  Câu lệnh tạo file html từ điển dữ liệu        |
+d +------------------------------------------------------------------------------------+
+
+
+d . {stata "net from https://raw.githubusercontent.com/leanhngoc/stata/master"} (cập nhập câu lệnh) 
+
 d {hline}
 d {bf:SUPPORT}
 d {hline}
@@ -54,3 +68,12 @@ f sharinganhtml.pkg
 f whattest.pkg
 f rasenganhtml.pkg
 f lecodebook.pkg
+f       +---------------------------------------------------------------------------------------------------------------------+
+f        | Lê Anh Ngọc                                                                                                       | 
+f       +---------------------------------------------------------------------------------------------------------------------+
+f        | Cơ quan         : Đại học Y dược Thành phố Hồ Chí Minh                                                            |
+f        | ngày phát hành  : 04/01/2025                   								    |
+f        | Email           : leanhngocump@gmail.com                                                                          |
+f        | --> nếu bạn có nhu cầu hỗ trợ về phương pháp nghiên cứu hoặc phân tích số liệu, đừng ngại hãy gửi mail cho tôi <3 |
+f       +---------------------------------------------------------------------------------------------------------------------+
+
