@@ -47,6 +47,17 @@ display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿
     local header_bg "#f2f2f2"
     local row_alt_bg "#f9f9f9"
     local indent_style ""
+    local border_style "1px solid"
+    local header_border_style "1px solid"
+    local row_border_style "1px solid"
+    local font_family "Arial, sans-serif"
+    local table_border_style "1px solid"
+    local table_border_color "#dddddd"
+    local header_font_weight "bold"
+    local header_font_style ""
+    local header_text_align "center"
+    local data_text_align "left"
+    local number_text_align "center"
 
     if "`indent'" != "" {
         local indent_style " style='padding-left: `indent'px;'"
@@ -105,12 +116,60 @@ display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿
         }
     }
 
+    // Define themes
     if "`theme'" == "dark" {
         local bg_color "#2d2d2d"
         local text_color "#ffffff"
         local border_color "#555555"
         local header_bg "#3d3d3d"
         local row_alt_bg "#353535"
+        local table_border_color "#555555"
+    }
+    
+    // Lancet theme
+    if "`theme'" == "lancet" {
+        local bg_color "#ffffff"
+        local text_color "#000000"
+        local border_color "#cccccc"
+        local header_bg "#ffffff"
+        local row_alt_bg "#f8f8f8"
+        local border_style "1px solid"
+        local header_border_style "2pt solid"
+        local row_border_style "1pt solid"
+        local font_family "Georgia, Times, serif"
+        local table_border_style "2pt solid"
+        local table_border_color "#000000"
+        local header_font_weight "bold"
+        local header_font_style "normal"
+        local header_text_align "center"
+        local data_text_align "left"
+        local number_text_align "right"
+    }
+    
+    // YTCC (Public Health) theme
+    if "`theme'" == "ytcc" {
+        local bg_color "#ffffff"
+        local text_color "#000000"
+        local border_color "#000000"
+        local header_bg "#ffffff"
+        local row_alt_bg "#ffffff"
+        local border_style "0pt solid"
+        local header_border_style "1pt solid"
+        local row_border_style "0pt solid"
+        local font_family "Arial, Helvetica, sans-serif"
+        local table_border_style "2pt solid"
+        local table_border_color "#000000"
+        local header_font_weight "bold"
+        local header_font_style "normal"
+        local header_text_align "center"
+        local data_text_align "left"
+        local number_text_align "center"
+    }
+    
+    // Combined frequency and percentage column for theme2
+    local combined_cols = 0
+    if "`theme'" == "theme2" {
+        local combined_cols = 1
     }
 
     cap file open html_output using "`output'", write replace
@@ -126,7 +185,7 @@ display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿
         "<meta name='viewport' content='width=device-width, initial-scale=1.0'>" _n ///
         "<title>`title'</title>" _n ///
         "<style>" _n ///
-        "body {font-family: Arial, sans-serif; margin: 20px; background: `bg_color'; color: `text_color';}" _n ///
+        "body {font-family: `font_family'; margin: 20px; background: `bg_color'; color: `text_color';}" _n ///
         "h1 {text-align: center;}" _n ///
         ".container {max-width: 1200px; margin: 0 auto; position: relative;}" _n ///
         ".copy-button {position: absolute; right: 0; top: -50px; padding: 8px 16px;" _n ///
@@ -151,13 +210,14 @@ display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿
         ".copy-btn:active {" _n ///
         "    background-color: #3d8b40;" _n ///
         "}" _n ///
-        "table {width: 100%; border-collapse: collapse; margin: 20px 0;}" _n ///
-        "th, td {border: 1px solid `border_color'; padding: 12px; text-align: left;}" _n ///
-        "th {background: `header_bg'; font-weight: bold; text-align: center;}" _n ///
+        "table {width: 100%; border-collapse: collapse; margin: 20px 0; border-top: `table_border_style' `table_border_color'; border-bottom: `table_border_style' `table_border_color';}" _n ///
+        "th, td {border: `border_style' `border_color'; padding: 12px; text-align: `data_text_align';}" _n ///
+        "th {background: `header_bg'; font-weight: `header_font_weight'; font-style: `header_font_style'; text-align: `header_text_align'; border-bottom: `header_border_style' `border_color';}" _n ///
         "tr:nth-child(even) {background: `row_alt_bg';}" _n ///
+        "tr td {border-bottom: `row_border_style' `border_color';}" _n ///
         ".var-header {background: `header_bg'; font-weight: bold;}" _n ///
         ".continuous-stats {font-style: italic;}" _n ///
-        ".number {text-align: center;}" _n ///
+        ".number {text-align: `number_text_align';}" _n ///
         ".center {text-align: center;}" _n ///
         ".summary-text {text-align: center; font-weight: bold; margin-top: 20px;}" _n ///
         ".notification {display: none; position: fixed; top: 20px; right: 20px;" _n ///
@@ -166,8 +226,9 @@ display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿
         "@keyframes fadeOut {from {opacity: 1;} to {opacity: 0;}}" _n ///
         "@media print {" _n ///
         "  body {background: white; color: black;}" _n ///
-        "  table {border: 1px solid black;}" _n ///
-        "  th, td {border: 1px solid black;}" _n ///
+        "  table {border-top: `table_border_style' black; border-bottom: `table_border_style' black;}" _n ///
+        "  th {border-bottom: `header_border_style' black;}" _n ///
+        "  tr td {border-bottom: `row_border_style' black;}" _n ///
         "  .copy-button, .notification {display: none;}" _n ///
         "}" _n ///
         "@media (max-width: 600px) {" _n ///
@@ -200,8 +261,15 @@ display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿
         "<h1>`title'</h1>" _n ///
         "<div class='container'>" _n ///
         "<button class='copy-btn' onclick='copyTableToClipboard()'>Copy Table</button>" _n ///
-        "<table>" _n ///
-        "<tr><th>Đặc điểm</th><th class='number'>Tần số</th><th class='number'>Tỷ lệ (%)</th></tr>" _n
+        "<table>" _n
+    
+    // Table header based on theme
+    if `combined_cols' == 1 {
+        file write html_output "<tr><th>Đặc điểm</th><th class='number'>Tần số (Tỷ lệ %)</th></tr>" _n
+    }
+    else {
+        file write html_output "<tr><th>Đặc điểm</th><th class='number'>Tần số</th><th class='number'>Tỷ lệ (%)</th></tr>" _n
+    }
 
     foreach var of local varlist {
         cap {
@@ -239,19 +307,43 @@ display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿
                 local p25 = string(r(p25), "%9.`digit'f")
                 local p75 = string(r(p75), "%9.`digit'f")
 
-                file write html_output ///
-                    "<tr><td class='continuous-stats'`indent_style'>Trung bình ± SD</td>" ///
-                    "<td class='center' colspan='2'>`mean' ± `sd'</td></tr>" _n ///
-                    "<tr><td class='continuous-stats'`indent_style'>Trung vị (IQR)</td>" ///
-                    "<td class='center' colspan='2'>`med' (`p25' - `p75')</td></tr>" _n
+                if `combined_cols' == 1 {
+                    file write html_output ///
+                        "<tr><td class='continuous-stats'`indent_style'>Trung bình ± SD</td>" ///
+                        "<td class='center'>`mean' ± `sd'</td></tr>" _n ///
+                        "<tr><td class='continuous-stats'`indent_style'>Trung vị (IQR)</td>" ///
+                        "<td class='center'>`med' (`p25' - `p75')</td></tr>" _n ///
+                        "<tr><td class='continuous-stats'`indent_style'>Min</td>" ///
+                        "<td class='center'>`min'</td></tr>" _n ///
+                        "<tr><td class='continuous-stats'`indent_style'>Max</td>" ///
+                        "<td class='center'>`max'</td></tr>" _n
+                }
+                else {
+                    file write html_output ///
+                        "<tr><td class='continuous-stats'`indent_style'>Trung bình ± SD</td>" ///
+                        "<td class='center' colspan='2'>`mean' ± `sd'</td></tr>" _n ///
+                        "<tr><td class='continuous-stats'`indent_style'>Trung vị (IQR)</td>" ///
+                        "<td class='center' colspan='2'>`med' (`p25' - `p75')</td></tr>" _n ///
+                        "<tr><td class='continuous-stats'`indent_style'>Min</td>" ///
+                        "<td class='center' colspan='2'>`min'</td></tr>" _n ///
+                        "<tr><td class='continuous-stats'`indent_style'>Max</td>" ///
+                        "<td class='center' colspan='2'>`max'</td></tr>" _n
+                }
 
                 // Add missing count for continuous variables
                 qui count if missing(`var')
                 local miss_count = r(N)
                 if `miss_count' > 0 {
                     local miss_percent = string(100 * `miss_count'/`N', "%9.`digit'f")
-                    file write html_output "<tr><td class='continuous-stats'`indent_style'>Missing</td>" ///
-                        "<td class='number'>`miss_count'</td><td class='number'>`miss_percent' %</td></tr>" _n
+                    
+                    if `combined_cols' == 1 {
+                        file write html_output "<tr><td class='continuous-stats'`indent_style'>Missing</td>" ///
+                            "<td class='number'>`miss_count' (`miss_percent' %)</td></tr>" _n
+                    }
+                    else {
+                        file write html_output "<tr><td class='continuous-stats'`indent_style'>Missing</td>" ///
+                            "<td class='number'>`miss_count'</td><td class='number'>`miss_percent' %</td></tr>" _n
+                    }
                 }
             }
             else if strpos("`type'", "str") { // Biến chuỗi
@@ -276,8 +368,14 @@ display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿
                         local display_val "`val'"
                     }
                     
-                    file write html_output "<tr><td`indent_style'>`display_val'</td>" ///
-                        "<td class='number'>`freq'</td><td class='number'>`p' %</td></tr>" _n
+                    if `combined_cols' == 1 {
+                        file write html_output "<tr><td`indent_style'>`display_val'</td>" ///
+                            "<td class='number'>`freq' (`p' %)</td></tr>" _n
+                    }
+                    else {
+                        file write html_output "<tr><td`indent_style'>`display_val'</td>" ///
+                            "<td class='number'>`freq'</td><td class='number'>`p' %</td></tr>" _n
+                    }
                     
                     local ++i
                 }
