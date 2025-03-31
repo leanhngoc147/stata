@@ -1,9 +1,12 @@
 capture program drop chidorihtml
 program define chidorihtml, rclass
+    // Syntax định nghĩa tham số đầu vào và cú pháp của chương trình
     syntax varlist [if] [in], [cont(string)] [uncont(string)] ///
         [output(string)] [digit(integer 3)] [autoopen] [title(string)] [pnote(string)] [lang(string)] ///
         [pdigit(integer 3)] [robust(string)] [style(string)]
-    display as text "	⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⢀⣶⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
+    
+    // ASCII art dragon display (không thay đổi)
+display as text "	⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⢀⣶⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠀⢀⣴⡇⢠⣾⡇⠀⣠⣴⣿⠁⠀⠀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣤⣿⣿⣷⣿⣿⣷⣾⣿⣿⣧⣤⣶⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
@@ -42,14 +45,14 @@ display as text "⠀⠀⠀⠀⠀⢸⠃⠀⠀⠀⠀⣀⣼⣿⣷⣿⣿⣿⣿⣿⣿
 display as text "⠀⠀⠀⠀⢀⡟⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠃⢀⣾⢋⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠸⣇⠀⠀⠀⠀"
 display as text "⠀⠀⠀⠀⣸⠃⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠁⣠⡿⢡⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⢻⠀⠀⠀⠀"
 display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠏⠀⣴⡟⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀"
-
-    // At least one of cont or uncont must be specified
+    
+    // Kiểm tra: Phải chỉ định ít nhất một trong hai tùy chọn cont hoặc uncont
     if "`cont'" == "" & "`uncont'" == "" {
         display as error "Phải chỉ định ít nhất một trong hai tùy chọn: cont() hoặc uncont()"
         exit 198
     }
     
-    // Language settings
+    // Thiết lập ngôn ngữ
     if "`lang'" == "" local lang "vie"
     local lang = lower("`lang'")
     if !inlist("`lang'", "vie", "eng") {
@@ -57,7 +60,7 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
         exit 198
     }
     
-    // Validate robust option
+    // Kiểm tra và xử lý tùy chọn robust
     local use_robust = 0
     if "`robust'" != "" {
         local robust = lower("`robust'")
@@ -70,7 +73,7 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
         }
     }
     
-    // Check style option
+    // Kiểm tra tùy chọn style
     local use_le_style = 0
     if "`style'" != "" {
         local style = lower("`style'")
@@ -79,7 +82,7 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
         }
     }
     
-    // Set language-specific text
+    // Thiết lập văn bản theo ngôn ngữ đã chọn
     if "`lang'" == "vie" {
         if "`title'" == "" local title "KẾT QUẢ PHÂN TÍCH"
         local char_header "ĐẶC ĐIỂM"
@@ -121,7 +124,7 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
         local stat_label_continuous "Value"
     }
     
-    // Output file settings
+    // Thiết lập file đầu ra
     if "`output'" == "" {
         local file_prefix = "chidori"
         local counter = 1
@@ -141,23 +144,23 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
         }
     }
     
-    // Parse continuous and non-continuous variables
-    tokenize "`cont'", parse(",")
+    // Parse continuous and non-continuous variables - ĐÃ SỬA
     local cont_vars
-    while "`1'" != "" {
-        if "`1'" != "," {
-            local cont_vars `cont_vars' `1'
+    if "`cont'" != "" {
+        // Cách phân tích biến liên tục an toàn hơn
+        foreach var in `cont' {
+            confirm numeric variable `var'
+            local cont_vars `cont_vars' `var'
         }
-        macro shift
     }
     
-    tokenize "`uncont'", parse(",")
     local uncont_vars
-    while "`1'" != "" {
-        if "`1'" != "," {
-            local uncont_vars `uncont_vars' `1'
+    if "`uncont'" != "" {
+        // Cách phân tích biến không liên tục an toàn hơn
+        foreach var in `uncont' {
+            confirm numeric variable `var'
+            local uncont_vars `uncont_vars' `var'
         }
-        macro shift
     }
     
     // Convert spaces to list
@@ -697,7 +700,7 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
                 file write `hh' "</tr>" _n
             }
             
-                            // Add p-value row for LE style
+            // Add p-value row for LE style
             if `use_le_style' == 1 {
                 file write `hh' "<tr class='p-value-row'>" _n ///
                     "<td class='indent'>`p_value_row_label'</td>" _n
@@ -749,15 +752,21 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
             // Process each continuous dependent variable
             local dep_var_index = 1
             foreach depvar in `cont_vars' {
-                // Calculate Pearson correlation coefficient for continuous dependent variables
-                qui pwcorr `depvar' `var', sig
+                // SỬA: Sử dụng correlate thay vì pwcorr để tính tương quan cho biến liên tục
+                qui correlate `depvar' `var'
                 local r = r(rho)
-                // Use 3 decimal places by default for correlation coefficients, or use the digit parameter if specified
+                
+                // SỬA: Tính toán p-value cho hệ số tương quan Pearson
+                // Sử dụng công thức tính t-statistic từ hệ số tương quan r
+                local n = r(N)
+                local tvalue = `r'*sqrt((`n'-2)/(1-`r'^2))
+                local p_corr = 2*ttail(`n'-2, abs(`tvalue'))
+                
+                // Use 3 decimal places by default for correlation coefficients
                 local r_str = string(`r', "%9.3f")
                 if "`digit'" != "3" {
                     local r_str = string(`r', "%9.`digit'f")
                 }
-                local p_corr = r(sig)
                 
                 // Store p-value for LE style
                 if `use_le_style' == 1 {
@@ -801,15 +810,16 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
             
             // Process each non-continuous dependent variable
             foreach depvar in `uncont_vars' {
-                // Calculate Spearman correlation coefficient for non-continuous dependent variables
-                qui spearman `depvar' `var'
+                // SỬA: Sử dụng spearman với tùy chọn stats(rho p) để lấy cả hệ số và p-value
+                qui spearman `depvar' `var', stats(rho p)
                 local rho = r(rho)
-                // Use 3 decimal places by default for correlation coefficients, or use the digit parameter if specified
+                local p_corr = r(p)
+                
+                // Use 3 decimal places by default for correlation coefficients
                 local rho_str = string(`rho', "%9.3f")
                 if "`digit'" != "3" {
                     local rho_str = string(`rho', "%9.`digit'f")
                 }
-                local p_corr = r(p)
                 
                 // Store p-value for LE style
                 if `use_le_style' == 1 {
@@ -836,8 +846,8 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
                     }
                 
                     if "`pnote'" == "TRUE" {
-                        file write `hh' "<td class='center'>r=`rho_str'</td>" _n ///
-                            "<td class='center'>`p_corr_display'<sup>h</sup></td>" _n
+                        file write `hh' "<td class='center'>r=`rho_str'<sup>h</sup></td>" _n ///
+                            "<td class='center'>`p_corr_display'</td>" _n
                     } 
                     else {
                         file write `hh' "<td class='center'>r=`rho_str'</td>" _n ///
