@@ -256,11 +256,41 @@ display as text "⣿⣿⣿⣿⣿⡇⣨⣀⠀⠙⡆⢰⣏⠀⠀⠀⠀⠀⠀⠈⣿
         "    }" _n ///
         "    window.getSelection().removeAllRanges();" _n ///
         "}" _n ///
+		 "function switchDecimalSeparator() {" _n ///
+        "    const table = document.querySelector('table');" _n ///
+        "    const btn = document.querySelector('.decimal-btn');" _n ///
+        "    const cells = table.querySelectorAll('td');" _n ///
+        "    let currentSeparator = '.';" _n ///
+        "    let newSeparator = ',';" _n ///
+        "    " _n ///
+        "    // Check if we're switching back from comma to dot" _n ///
+        "    if (btn.getAttribute('data-current') === 'comma') {" _n ///
+        "        currentSeparator = ',';" _n ///
+        "        newSeparator = '.';" _n ///
+        "        btn.setAttribute('data-current', 'dot');" _n ///
+        "        btn.textContent = 'Use Comma (,) Decimal';" _n ///
+        "    } else {" _n ///
+        "        btn.setAttribute('data-current', 'comma');" _n ///
+        "        btn.textContent = 'Use Dot (.) Decimal';" _n ///
+        "    }" _n ///
+        "    " _n ///
+        "    // Replace all decimals in table, including <0.001 format" _n ///
+        "    cells.forEach(cell => {" _n ///
+        "        const text = cell.innerHTML;" _n ///
+        "        // First handle the <0.001 case" _n ///
+        "        let newText = text.replace(new RegExp('<0\\' + currentSeparator + '001', 'g'), '<0' + newSeparator + '001');" _n ///
+        "        // Then handle regular numbers with decimal points" _n ///
+        "        const regex = new RegExp('(\\d+)\\' + currentSeparator + '(\\d+)', 'g');" _n ///
+        "        newText = newText.replace(regex, '$1' + newSeparator + '$2');" _n ///
+        "        cell.innerHTML = newText;" _n ///
+        "    });" _n ///
+        "}" _n ///
         "</script>" _n ///
         "</head><body>" _n ///
         "<h1>`title'</h1>" _n ///
         "<div class='container'>" _n ///
         "<button class='copy-btn' onclick='copyTableToClipboard()'>Copy Table</button>" _n ///
+		"<button class='btn decimal-btn' onclick='switchDecimalSeparator()' data-current='dot'>Use Comma (,) Decimal</button>" _n ///
         "<table>" _n
     
     // Table header based on theme
