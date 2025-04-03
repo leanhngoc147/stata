@@ -1,8 +1,11 @@
 capture program drop rasenganhtml
 program define rasenganhtml, rclass
-    syntax varlist [if] [in], by(varname) [ib(integer 1)] [ratio(string)] [per(string)] [p(string)] ///
+    syntax anything(name=orig_varlist id="variable list") [if] [in], by(varname) ///
+        [ib(integer 1)] [ratio(string)] [per(string)] [p(string)] ///
         [output(string)] [digit(integer 1)] [autoopen] [title(string)] [pnote(string)] [lang(string)] [N(string)] [ptest(string)] ///
         [pdigit(integer 3)] [ratiodigit(integer 2)] [robust(string)] [event(varname)] [eventtime(varname)] [eventvalue(string)]
+    	
+		
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⡀⠑⠒⠀⠠⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⣘⠖⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠴⡖⠒⠒⠈⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀"
@@ -27,6 +30,27 @@ program define rasenganhtml, rclass
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢠⠃⠀⠀⣿⣶⣶⣶⣶⠖⠁⠀⠀⡄⠐⠃⠀⠀⠎⠀⠀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢁⠎⠀⠀⣸⠿⠟⠛⠛⢣⠀⢀⣴⡟⠁⠀⢀⣀⡠⢤⣀⣀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⠎⠀⡀⣠⡿⠒⠢⡀⣠⠎⠀⢸⡏⠀⢀⠴⣯⣅⢀⢀⡉⣀⠀⣀⣨⣿⣿⣿⣿   "	
+    // Process the variable list with checkqname
+    capture checkqname `orig_varlist' `if' `in'
+    if _rc {
+        display as error "Error processing variable list with checkqname"
+        exit _rc
+    }
+    
+    // Get clean varlist and ib options from checkqname
+    local varlist = r(varlist)
+    local ib_opts = r(ib_opts)
+    
+    // Parse the ib_opts to create a dictionary of variable -> reference level
+    local var_refs ""
+    foreach opt of local ib_opts {
+        if regexm("`opt'", "^(.+)=(.+)$") {
+            local var = regexs(1)
+            local ref = regexs(2)
+            local var_refs "`var_refs' `var'=`ref'"
+        }
+    }
+    
     if "`lang'" == "" local lang "vie"
     local lang = lower("`lang'")
     if !inlist("`lang'", "vie", "eng") {
@@ -149,118 +173,6 @@ program define rasenganhtml, rclass
                 exit 603
             }
         }
-        
-        // Count number of levels for rowspan
-        local num_levels: word count `levels'
-        
-        // Process each level of the categorical variable
-        local first_level = 1
-        foreach l of local levels {
-            local vallabel: label (`var') `l'
-            if "`vallabel'" == "" local vallabel "`l'"
-            
-            qui count if `var' == `l' & `by' == 1
-            local n1 = r(N)
-            qui count if `by' == 1
-            local total1 = r(N)
-            
-            qui count if `var' == `l' & `by' == 0
-            local n0 = r(N)
-            qui count if `by' == 0
-            local total0 = r(N)
-            
-            if "`per'" == "row" {
-                local total_row = `n1' + `n0'
-                local pct1 = string(100 * `n1'/`total_row', "%9.`digit'f")
-                local pct0 = string(100 * `n0'/`total_row', "%9.`digit'f")
-            }
-            else {
-                local pct1 = string(100 * `n1'/`total1', "%9.`digit'f")
-                local pct0 = string(100 * `n0'/`total0', "%9.`digit'f")
-            }
-            
-            if `l' == `ref_level' {
-                local ratio_display "`ref_label'"
-                local p_display ""
-                
-                // For reference level, we don't display p-value in the main p column
-            }
-            else {
-                tempvar temp_var
-                gen `temp_var' = `var'
-                recode `temp_var' (`l'=1) (`ref_level'=0) (else=.)
-                
-                capture {
-                    if "`ratio'" == "OR" {
-                        if `use_robust' {
-                            qui logistic `by' `temp_var', vce(robust)
-                        }
-                        else {
-                            qui logistic `by' `temp_var'
-                        }
-                    }
-                    else if "`ratio'" == "RR" {
-                        if `use_robust' {
-                            qui poisson `by' `temp_var', irr vce(robust)
-                        }
-                        else {
-                            qui poisson `by' `temp_var', irr
-                        }
-                    }
-                    else if "`ratio'" == "PR" {
-                        if `use_robust' {
-                            qui glm `by' `temp_var', family(poisson) link(log) eform vce(robust)
-                        }
-                        else {
-                            qui glm `by' `temp_var', family(poisson) link(log) eform
-                        }
-                    }
-                    else if "`ratio'" == "HR" {
-                        // Setup survival data if not already done
-                        qui stset `eventtime', failure(`event' == `eventvalue')
-                        
-                        if `use_robust' {
-                            qui stcox `temp_var', vce(robust)
-                        }
-                        else {
-                            qui stcox `temp_var'
-                        }
-                    }
-                    
-                    if _rc == 0 {
-                        local est = exp(_b[`temp_var'])
-                        local lb = exp(_b[`temp_var'] - 1.96*_se[`temp_var'])
-                        local ub = exp(_b[`temp_var'] + 1.96*_se[`temp_var'])
-                        
-                        if `est' == 1 {
-                            local ratio_display "(empty)"
-                        }
-                        else {
-                            local ratio_display = string(`est', "%9.`ratiodigit'f") + " (" + string(`lb', "%9.`ratiodigit'f") + "-" + string(`ub', "%9.`ratiodigit'f") + ")"
-                        }
-                        
-                        local p = 2 * (1 - normal(abs(_b[`temp_var']/_se[`temp_var'])))
-                        if `p' < 0.001 {
-                            local p_str = "<0.001"
-                        } 
-                        else {
-                            local p_str = string(`p', "%9.`pdigit'f")
-                        }
-                        
-                        if "`pnote'" == "TRUE" {
-                            local p_display "`p_str'<sup>a</sup>"
-                        } 
-                        else {
-                            local p_display "`p_str'"
-                        }
-                    }
-                    else {
-                        local ratio_display ""
-                        local p_display ""
-                    }
-                }
-                drop `temp_var'
-            }
     }
     else {
         if !ustrregexm("`output'", "\.html$") {
@@ -554,6 +466,15 @@ program define rasenganhtml, rclass
     }
             
     foreach var of varlist `varlist' {
+        // Check if a custom reference level is specified for this variable
+        local custom_ref = `ib'  // Default reference level from ib() option
+        foreach item of local var_refs {
+            if regexm("`item'", "^`var'=(.+)$") {
+                local custom_ref = regexs(1)
+                display as text "Using custom reference level `custom_ref' for variable `var'"
+            }
+        }
+        
         // Create a temporary variable for tracking used test types
         local temp_used_notes ""
         
@@ -693,420 +614,445 @@ program define rasenganhtml, rclass
                     local p_ttest_str = string(`p_ttest', "%9.3f")
                 }
                 
-                // Median and IQR calculation
-                foreach l of numlist 0/1 {
-                    qui sum `var' if `by' == `l', detail
-                    local median`l' = string(r(p50), "%9.`digit'f")
-                    local q1`l' = string(r(p25), "%9.`digit'f")
-                    local q3`l' = string(r(p75), "%9.`digit'f")
-                    local iqr`l' = "`q1`l''-`q3`l''"
+               // Median and IQR calculation
+foreach l of numlist 0/1 {
+    qui sum `var' if `by' == `l', detail
+    local median`l' = string(r(p50), "%9.`digit'f")
+    local q1`l' = string(r(p25), "%9.`digit'f")
+    local q3`l' = string(r(p75), "%9.`digit'f")
+    local iqr`l' = "`q1`l''-`q3`l''"
+}
+
+// Mann-Whitney test
+qui ranksum `var', by(`by')
+local p_ranksum = r(p)
+if `p_ranksum' < 0.001 {
+    local p_ranksum_str = "<0.001"
+} 
+else {
+    local p_ranksum_str = string(`p_ranksum', "%9.3f")
+}
+
+// Calculate additional p-value if ptest is specified
+if `have_ptest' {
+    if "`ptest'" == "chi2" {
+        // For continuous variables, we'll use t-test for chi2 option
+        local ptest_value = `p_ttest'
+        if `ptest_value' < 0.001 {
+            local ptest_display_val = "<0.001"
+        } 
+        else {
+            local ptest_display_val = string(`ptest_value', "%9.3f")
+        }
+        
+        if "`pnote'" == "TRUE" {
+            local ptest_display "`ptest_display_val'<sup>b</sup>"  // t-test
+        } 
+        else {
+            local ptest_display "`ptest_display_val'"
+        }
+    } 
+    else if "`ptest'" == "fisher" {
+        // For continuous variables, we'll use Mann-Whitney for fisher option
+        local ptest_value = `p_ranksum'
+        if `ptest_value' < 0.001 {
+            local ptest_display_val = "<0.001"
+        } 
+        else {
+            local ptest_display_val = string(`ptest_value', "%9.3f")
+        }
+        
+        if "`pnote'" == "TRUE" {
+            local ptest_display "`ptest_display_val'<sup>c</sup>"  // Mann-Whitney
+        } 
+        else {
+            local ptest_display "`ptest_display_val'"
+        }
+    }
+    else { // auto
+        // For continuous variables, use t-test if normally distributed, otherwise Mann-Whitney
+        // This is a simplification - in a real scenario you might want to test for normality
+        local ptest_value = `p_ttest'
+        if `ptest_value' < 0.001 {
+            local ptest_display_val = "<0.001"
+        } 
+        else {
+            local ptest_display_val = string(`ptest_value', "%9.3f")
+        }
+        
+        if "`pnote'" == "TRUE" {
+            local ptest_display "`ptest_display_val'<sup>b</sup>"  // t-test as default for auto
+        } 
+        else {
+            local ptest_display "`ptest_display_val'"
+        }
+    }
+}
+
+if "`pnote'" == "TRUE" {
+    local p_ttest_display "`p_ttest_str'<sup>b</sup>"
+    local p_ranksum_display "`p_ranksum_str'<sup>c</sup>"
+}
+else {
+    local p_ttest_display "`p_ttest_str'"
+    local p_ranksum_display "`p_ranksum_str'"
+}
+
+// Calculate ratio based on choice
+local ratio_val = ""
+
+if "`ratio'" == "OR" {
+    tempvar binary_outcome high_risk
+    qui sum `var', detail
+    local median_all = r(p50)
+    gen `binary_outcome' = `var' > `median_all' if !missing(`var')
+    
+    if `use_robust' {
+        qui logistic `by' `var', vce(robust)
+    }
+    else {
+        qui logistic `by' `var'
+    }
+    local beta = _b[`var']
+    local se = _se[`var']
+    
+    local or = exp(`beta')
+    local or_lb = exp(`beta' - 1.96*`se')
+    local or_ub = exp(`beta' + 1.96*`se')
+    
+    local ratio_val = string(`or', "%9.`ratiodigit'f") + " (" + string(`or_lb', "%9.`ratiodigit'f") + "-" + string(`or_ub', "%9.`ratiodigit'f") + ")"
+}
+else if "`ratio'" == "RR" {
+    tempvar binary_outcome high_risk
+    qui sum `var', detail
+    local median_all = r(p50)
+    gen `binary_outcome' = `var' > `median_all' if !missing(`var')
+    
+    if `use_robust' {
+        qui poisson `by' `var', irr vce(robust)
+    }
+    else {
+        qui poisson `by' `var', irr
+    }
+    local beta = _b[`var']
+    local se = _se[`var']
+    
+    local rr = exp(`beta')
+    local rr_lb = exp(`beta' - 1.96*`se')
+    local rr_ub = exp(`beta' + 1.96*`se')
+    
+    local ratio_val = string(`rr', "%9.`ratiodigit'f") + " (" + string(`rr_lb', "%9.`ratiodigit'f") + "-" + string(`rr_ub', "%9.`ratiodigit'f") + ")"
+}
+else if "`ratio'" == "PR" {
+    tempvar binary_outcome high_risk
+    qui sum `var', detail
+    local median_all = r(p50)
+    gen `binary_outcome' = `var' > `median_all' if !missing(`var')
+    
+    if `use_robust' {
+        qui poisson `by' `var', irr vce(robust)
+    }
+    else {
+        qui poisson `by' `var', irr
+    }
+    local beta = _b[`var']
+    local se = _se[`var']
+    
+    local pr = exp(`beta')
+    local pr_lb = exp(`beta' - 1.96*`se')
+    local pr_ub = exp(`beta' + 1.96*`se')
+    
+    local ratio_val = string(`pr', "%9.`ratiodigit'f") + " (" + string(`pr_lb', "%9.`ratiodigit'f") + "-" + string(`pr_ub', "%9.`ratiodigit'f") + ")"
+}
+else if "`ratio'" == "HR" {
+    // Setup survival data if not already done
+    qui stset `eventtime', failure(`event' == `eventvalue')
+    
+    if `use_robust' {
+        qui stcox `var', vce(robust)
+    }
+    else {
+        qui stcox `var'
+    }
+    local beta = _b[`var']
+    local se = _se[`var']
+    
+    local hr = exp(`beta')
+    local hr_lb = exp(`beta' - 1.96*`se')
+    local hr_ub = exp(`beta' + 1.96*`se')
+    
+    local ratio_val = string(`hr', "%9.`ratiodigit'f") + " (" + string(`hr_lb', "%9.`ratiodigit'f") + "-" + string(`hr_ub', "%9.`ratiodigit'f") + ")"
+}
+
+// Write Mean ± SD row
+file write `hh' "<tr>" _n ///
+    "<td class='indent'>`mean_label'</td>" _n ///
+    "<td class='center'>`mean1' ± `sd1'</td>" _n ///
+    "<td class='center'>`mean0' ± `sd0'</td>" _n ///
+    "<td class='center'>`p_ttest_display'</td>" _n
+
+// Add ptest cell if specified
+if `have_ptest' {
+    file write `hh' "<td class='center' rowspan='2'>`ptest_display'</td>" _n
+}
+
+file write `hh' "<td class='center' rowspan='2'>`ratio_val'</td>" _n ///
+    "</tr>" _n
+
+// Write Median (IQR) row
+file write `hh' "<tr>" _n ///
+    "<td class='indent'>`median_label'</td>" _n ///
+    "<td class='center'>`median1' (`iqr1')</td>" _n ///
+    "<td class='center'>`median0' (`iqr0')</td>" _n ///
+    "<td class='center'>`p_ranksum_display'</td>" _n ///
+    "</tr>" _n
+
+if "`ratio'" != "HR" & "`binary_outcome'" != "" {
+    drop `binary_outcome'
+}
+
+continue
+}
+}
+
+qui levelsof `var', local(levels)
+
+// Use the custom reference level for this variable if specified, otherwise use the default
+local ref_level: word `custom_ref' of `levels'
+
+// Set up for Chi-square/Fisher test if ptest is specified
+local ptest_display = ""
+if `have_ptest' {
+    // First run the appropriate test for the entire variable to get the overall p-value
+    local use_fisher = 0
+    local overall_pvalue = .
+    
+    if "`ptest'" == "fisher" {
+        local use_fisher = 1
+    }
+    else if "`ptest'" == "chi2" {
+        local use_fisher = 0
+    }
+    else { // auto
+        // Create a contingency table to check Fisher's criteria
+        tempname crosstab expected_vals
+        qui tab `var' `by', matcell(`crosstab') matcol(`expected_vals')
+        
+        // Get expected values
+        qui tab `var' `by', expected
+        
+        // Check if any expected value <= 1
+        local min_exp = .
+        forvalues r = 1/`=r(r)' {
+            forvalues c = 1/`=r(c)' {
+                local exp_val = r(e_`r'_`c')
+                if `exp_val' < `min_exp' | `min_exp' == . {
+                    local min_exp = `exp_val'
+                }
+            }
+        }
+        
+        // Count small cells (expected <= 5)
+        local count_small_cells = 0
+        local total_cells = r(r) * r(c)
+        forvalues r = 1/`=r(r)' {
+            forvalues c = 1/`=r(c)' {
+                local exp_val = r(e_`r'_`c')
+                if `exp_val' <= 5 {
+                    local count_small_cells = `count_small_cells' + 1
+                }
+            }
+        }
+        
+        // Use Fisher if any expected <= 1 or >20% of cells have expected <= 5
+        if `min_exp' <= 1 | (`count_small_cells'/`total_cells' > 0.2) {
+            local use_fisher = 1
+        }
+    }
+    
+    // Run the selected test
+    if `use_fisher' == 1 {
+        qui fisher `var' `by', exact
+        local overall_pvalue = r(p_exact)
+        local test_type = "d"  // Fisher's exact test
+    } 
+    else {
+        qui tab `var' `by', chi2
+        local overall_pvalue = r(p)
+        local test_type = "e"  // Chi-square test for ptest column
+    }
+    
+    if `overall_pvalue' < 0.001 {
+        local ptest_value = "<0.001"
+    } 
+    else {
+        local ptest_value = string(`overall_pvalue', "%9.3f")
+    }
+    
+    if "`pnote'" == "TRUE" {
+        local ptest_display "`ptest_value'<sup>`test_type'</sup>"
+    } 
+    else {
+        local ptest_display "`ptest_value'"
+    }
+}
+
+// Count number of levels for rowspan
+local num_levels: word count `levels'
+
+// Process each level of the categorical variable
+local first_level = 1
+foreach l of local levels {
+    local vallabel: label (`var') `l'
+    if "`vallabel'" == "" local vallabel "`l'"
+    
+    qui count if `var' == `l' & `by' == 1
+    local n1 = r(N)
+    qui count if `by' == 1
+    local total1 = r(N)
+    
+    qui count if `var' == `l' & `by' == 0
+    local n0 = r(N)
+    qui count if `by' == 0
+    local total0 = r(N)
+    
+    if "`per'" == "row" {
+        local total_row = `n1' + `n0'
+        local pct1 = string(100 * `n1'/`total_row', "%9.`digit'f")
+        local pct0 = string(100 * `n0'/`total_row', "%9.`digit'f")
+    }
+    else {
+        local pct1 = string(100 * `n1'/`total1', "%9.`digit'f")
+        local pct0 = string(100 * `n0'/`total0', "%9.`digit'f")
+    }
+    
+    if `l' == `ref_level' {
+        local ratio_display "`ref_label'"
+        local p_display ""
+        
+        // For reference level, we don't display p-value in the main p column
+    }
+    else {
+        tempvar temp_var
+        gen `temp_var' = `var'
+        recode `temp_var' (`l'=1) (`ref_level'=0) (else=.)
+        
+        capture {
+            if "`ratio'" == "OR" {
+                if `use_robust' {
+                    qui logistic `by' `temp_var', vce(robust)
+                }
+                else {
+                    qui logistic `by' `temp_var'
+                }
+            }
+            else if "`ratio'" == "RR" {
+                if `use_robust' {
+                    qui poisson `by' `temp_var', irr vce(robust)
+                }
+                else {
+                    qui poisson `by' `temp_var', irr
+                }
+            }
+            else if "`ratio'" == "PR" {
+                if `use_robust' {
+                    qui glm `by' `temp_var', family(poisson) link(log) eform vce(robust)
+                }
+                else {
+                    qui glm `by' `temp_var', family(poisson) link(log) eform
+                }
+            }
+            else if "`ratio'" == "HR" {
+                // Setup survival data if not already done
+                qui stset `eventtime', failure(`event' == `eventvalue')
+                
+                if `use_robust' {
+                    qui stcox `temp_var', vce(robust)
+                }
+                else {
+                    qui stcox `temp_var'
+                }
+            }
+            
+            if _rc == 0 {
+                local est = exp(_b[`temp_var'])
+                local lb = exp(_b[`temp_var'] - 1.96*_se[`temp_var'])
+                local ub = exp(_b[`temp_var'] + 1.96*_se[`temp_var'])
+                
+                if `est' == 1 {
+                    local ratio_display "(empty)"
+                }
+                else {
+                    local ratio_display = string(`est', "%9.`ratiodigit'f") + " (" + string(`lb', "%9.`ratiodigit'f") + "-" + string(`ub', "%9.`ratiodigit'f") + ")"
                 }
                 
-                // Mann-Whitney test
-                qui ranksum `var', by(`by')
-                local p_ranksum = r(p)
-                if `p_ranksum' < 0.001 {
-                    local p_ranksum_str = "<0.001"
+                local p = 2 * (1 - normal(abs(_b[`temp_var']/_se[`temp_var'])))
+                if `p' < 0.001 {
+                    local p_str = "<0.001"
                 } 
                 else {
-                    local p_ranksum_str = string(`p_ranksum', "%9.3f")
-                }
-                
-                // Calculate additional p-value if ptest is specified
-                if `have_ptest' {
-                    if "`ptest'" == "chi2" {
-                        // For continuous variables, we'll use t-test for chi2 option
-                        local ptest_value = `p_ttest'
-                        if `ptest_value' < 0.001 {
-                            local ptest_display_val = "<0.001"
-                        } 
-                        else {
-                            local ptest_display_val = string(`ptest_value', "%9.3f")
-                        }
-                        
-                        if "`pnote'" == "TRUE" {
-                            local ptest_display "`ptest_display_val'<sup>b</sup>"  // t-test
-                        } 
-                        else {
-                            local ptest_display "`ptest_display_val'"
-                        }
-                    } 
-                    else if "`ptest'" == "fisher" {
-                        // For continuous variables, we'll use Mann-Whitney for fisher option
-                        local ptest_value = `p_ranksum'
-                        if `ptest_value' < 0.001 {
-                            local ptest_display_val = "<0.001"
-                        } 
-                        else {
-                            local ptest_display_val = string(`ptest_value', "%9.3f")
-                        }
-                        
-                        if "`pnote'" == "TRUE" {
-                            local ptest_display "`ptest_display_val'<sup>c</sup>"  // Mann-Whitney
-                        } 
-                        else {
-                            local ptest_display "`ptest_display_val'"
-                        }
-                    }
-                    else { // auto
-                        // For continuous variables, use t-test if normally distributed, otherwise Mann-Whitney
-                        // This is a simplification - in a real scenario you might want to test for normality
-                        local ptest_value = `p_ttest'
-                        if `ptest_value' < 0.001 {
-                            local ptest_display_val = "<0.001"
-                        } 
-                        else {
-                            local ptest_display_val = string(`ptest_value', "%9.3f")
-                        }
-                        
-                        if "`pnote'" == "TRUE" {
-                            local ptest_display "`ptest_display_val'<sup>b</sup>"  // t-test as default for auto
-                        } 
-                        else {
-                            local ptest_display "`ptest_display_val'"
-                        }
-                    }
+                    local p_str = string(`p', "%9.`pdigit'f")
                 }
                 
                 if "`pnote'" == "TRUE" {
-                    local p_ttest_display "`p_ttest_str'<sup>b</sup>"
-                    local p_ranksum_display "`p_ranksum_str'<sup>c</sup>"
-                }
+                    local p_display "`p_str'<sup>a</sup>"
+                } 
                 else {
-                    local p_ttest_display "`p_ttest_str'"
-                    local p_ranksum_display "`p_ranksum_str'"
+                    local p_display "`p_str'"
                 }
-                
-                // Calculate ratio based on choice
-                local ratio_val = ""
-                
-                if "`ratio'" == "OR" {
-                    tempvar binary_outcome high_risk
-                    qui sum `var', detail
-                    local median_all = r(p50)
-                    gen `binary_outcome' = `var' > `median_all' if !missing(`var')
-                    
-                    if `use_robust' {
-                        qui logistic `by' `var', vce(robust)
-                    }
-                    else {
-                        qui logistic `by' `var'
-                    }
-                    local beta = _b[`var']
-                    local se = _se[`var']
-                    
-                    local or = exp(`beta')
-                    local or_lb = exp(`beta' - 1.96*`se')
-                    local or_ub = exp(`beta' + 1.96*`se')
-                    
-                    local ratio_val = string(`or', "%9.`ratiodigit'f") + " (" + string(`or_lb', "%9.`ratiodigit'f") + "-" + string(`or_ub', "%9.`ratiodigit'f") + ")"
-                }
-                else if "`ratio'" == "RR" {
-                    tempvar binary_outcome high_risk
-                    qui sum `var', detail
-                    local median_all = r(p50)
-                    gen `binary_outcome' = `var' > `median_all' if !missing(`var')
-                    
-                    if `use_robust' {
-                        qui poisson `by' `var', irr vce(robust)
-                    }
-                    else {
-                        qui poisson `by' `var', irr
-                    }
-                    local beta = _b[`var']
-                    local se = _se[`var']
-                    
-                    local rr = exp(`beta')
-                    local rr_lb = exp(`beta' - 1.96*`se')
-                    local rr_ub = exp(`beta' + 1.96*`se')
-                    
-                    local ratio_val = string(`rr', "%9.`ratiodigit'f") + " (" + string(`rr_lb', "%9.`ratiodigit'f") + "-" + string(`rr_ub', "%9.`ratiodigit'f") + ")"
-                }
-                else if "`ratio'" == "PR" {
-                    tempvar binary_outcome high_risk
-                    qui sum `var', detail
-                    local median_all = r(p50)
-                    gen `binary_outcome' = `var' > `median_all' if !missing(`var')
-                    
-                    if `use_robust' {
-                        qui poisson `by' `var', irr vce(robust)
-                    }
-                    else {
-                        qui poisson `by' `var', irr
-                    }
-                    local beta = _b[`var']
-                    local se = _se[`var']
-                    
-                    local pr = exp(`beta')
-                    local pr_lb = exp(`beta' - 1.96*`se')
-                    local pr_ub = exp(`beta' + 1.96*`se')
-                    
-                    local ratio_val = string(`pr', "%9.`ratiodigit'f") + " (" + string(`pr_lb', "%9.`ratiodigit'f") + "-" + string(`pr_ub', "%9.`ratiodigit'f") + ")"
-                }
-                else if "`ratio'" == "HR" {
-                    // Setup survival data if not already done
-                    qui stset `eventtime', failure(`event' == `eventvalue')
-                    
-                    if `use_robust' {
-                        qui stcox `var', vce(robust)
-                    }
-                    else {
-                        qui stcox `var'
-                    }
-                    local beta = _b[`var']
-                    local se = _se[`var']
-                    
-                    local hr = exp(`beta')
-                    local hr_lb = exp(`beta' - 1.96*`se')
-                    local hr_ub = exp(`beta' + 1.96*`se')
-                    
-                    local ratio_val = string(`hr', "%9.`ratiodigit'f") + " (" + string(`hr_lb', "%9.`ratiodigit'f") + "-" + string(`hr_ub', "%9.`ratiodigit'f") + ")"
-                }
-                
-                // Write Mean ± SD row
-                file write `hh' "<tr>" _n ///
-                    "<td class='indent'>`mean_label'</td>" _n ///
-                    "<td class='center'>`mean1' ± `sd1'</td>" _n ///
-                    "<td class='center'>`mean0' ± `sd0'</td>" _n ///
-                    "<td class='center'>`p_ttest_display'</td>" _n
-                
-                // Add ptest cell if specified
-                if `have_ptest' {
-                    file write `hh' "<td class='center' rowspan='2'>`ptest_display'</td>" _n
-                }
-                
-                file write `hh' "<td class='center' rowspan='2'>`ratio_val'</td>" _n ///
-                    "</tr>" _n
-                
-                // Write Median (IQR) row
-                file write `hh' "<tr>" _n ///
-                    "<td class='indent'>`median_label'</td>" _n ///
-                    "<td class='center'>`median1' (`iqr1')</td>" _n ///
-                    "<td class='center'>`median0' (`iqr0')</td>" _n ///
-                    "<td class='center'>`p_ranksum_display'</td>" _n ///
-                    "</tr>" _n
-                
-                if "`ratio'" != "HR" & "`binary_outcome'" != "" {
-                    drop `binary_outcome'
-                }
-                
-                continue
+            }
+            else {
+                local ratio_display ""
+                local p_display ""
             }
         }
-        
-        qui levelsof `var', local(levels)
-        local ref_level: word `ib' of `levels'
-        
-        // Set up for Chi-square/Fisher test if ptest is specified
-        local ptest_display = ""
-        if `have_ptest' {
-            // First run the appropriate test for the entire variable to get the overall p-value
-            local use_fisher = 0
-            local overall_pvalue = .
-            
-            if "`ptest'" == "fisher" {
-                local use_fisher = 1
-            }
-            else if "`ptest'" == "chi2" {
-                local use_fisher = 0
-            }
-            else { // auto
-                // Create a contingency table to check Fisher's criteria
-                tempname crosstab expected_vals
-                qui tab `var' `by', matcell(`crosstab') matcol(`expected_vals')
-                
-                // Get expected values
-                qui tab `var' `by', expected
-                
-                // Check if any expected value <= 1
-                local min_exp = .
-                forvalues r = 1/`=r(r)' {
-                    forvalues c = 1/`=r(c)' {
-                        local exp_val = r(e_`r'_`c')
-                        if `exp_val' < `min_exp' | `min_exp' == . {
-                            local min_exp = `exp_val'
-                        }
-                    }
-                }
-                
-                // Count small cells (expected <= 5)
-                local count_small_cells = 0
-                local total_cells = r(r) * r(c)
-                forvalues r = 1/`=r(r)' {
-                    forvalues c = 1/`=r(c)' {
-                        local exp_val = r(e_`r'_`c')
-                        if `exp_val' <= 5 {
-                            local count_small_cells = `count_small_cells' + 1
-                        }
-                    }
-                }
-                
-                // Use Fisher if any expected <= 1 or >20% of cells have expected <= 5
-                if `min_exp' <= 1 | (`count_small_cells'/`total_cells' > 0.2) {
-                    local use_fisher = 1
-                }
-            }
-            
-            // Run the selected test
-            if `use_fisher' == 1 {
-                qui fisher `var' `by', exact
-                local overall_pvalue = r(p_exact)
-                local test_type = "d"  // Fisher's exact test
-            } 
-            else {
-                qui tab `var' `by', chi2
-                local overall_pvalue = r(p)
-                local test_type = "e"  // Chi-square test for ptest column
-            }
-            
-            if `overall_pvalue' < 0.001 {
-                local ptest_value = "<0.001"
-            } 
-            else {
-                local ptest_value = string(`overall_pvalue', "%9.3f")
-            }
-            
-            if "`pnote'" == "TRUE" {
-            local ptest_display "`ptest_value'<sup>`test_type'</sup>"
-        } 
-        else {
-            local ptest_display "`ptest_value'"
+        drop `temp_var'
+    }
+    
+    file write `hh' "<tr>" _n ///
+        "<td class='indent'>`vallabel'</td>" _n ///
+        "<td class='center'>`n1' (`pct1'%)</td>" _n ///
+        "<td class='center'>`n0' (`pct0'%)</td>" _n ///
+        "<td class='center'>`p_display'</td>" _n
+    
+    // Add ptest value only for first level
+    if `have_ptest' {
+        if `first_level' == 1 {
+            file write `hh' "<td class='center' rowspan='`num_levels''>`ptest_display'</td>" _n
+            local first_level = 0
         }
     }
     
-    // Count number of levels for rowspan
-    local num_levels: word count `levels'
-    
-    // Process each level of the categorical variable
-    local first_level = 1
-    foreach l of local levels {
-        local vallabel: label (`var') `l'
-        if "`vallabel'" == "" local vallabel "`l'"
-        
-        qui count if `var' == `l' & `by' == 1
-        local n1 = r(N)
-        qui count if `by' == 1
-        local total1 = r(N)
-        
-        qui count if `var' == `l' & `by' == 0
-        local n0 = r(N)
-        qui count if `by' == 0
-        local total0 = r(N)
-        
-        if "`per'" == "row" {
-            local total_row = `n1' + `n0'
-            local pct1 = string(100 * `n1'/`total_row', "%9.`digit'f")
-            local pct0 = string(100 * `n0'/`total_row', "%9.`digit'f")
-        }
-        else {
-            local pct1 = string(100 * `n1'/`total1', "%9.`digit'f")
-            local pct0 = string(100 * `n0'/`total0', "%9.`digit'f")
-        }
-        
-        if `l' == `ref_level' {
-            local ratio_display "`ref_label'"
-            local p_display ""
-            
-            // For reference level, we don't display p-value in the main p column
-        }
-        else {
-            tempvar temp_var
-            gen `temp_var' = `var'
-            recode `temp_var' (`l'=1) (`ref_level'=0) (else=.)
-            
-            capture {
-                if "`ratio'" == "OR" {
-                    if `use_robust' {
-                        qui logistic `by' `temp_var', vce(robust)
-                    }
-                    else {
-                        qui logistic `by' `temp_var'
-                    }
-                }
-                else if "`ratio'" == "RR" {
-                    if `use_robust' {
-                        qui poisson `by' `temp_var', irr vce(robust)
-                    }
-                    else {
-                        qui poisson `by' `temp_var', irr
-                    }
-                }
-                else if "`ratio'" == "PR" {
-                    if `use_robust' {
-                        qui glm `by' `temp_var', family(poisson) link(log) eform vce(robust)
-                    }
-                    else {
-                        qui glm `by' `temp_var', family(poisson) link(log) eform
-                    }
-                }
-                else if "`ratio'" == "HR" {
-                    // Setup survival data if not already done
-                    qui stset `eventtime', failure(`event' == `eventvalue')
-                    
-                    if `use_robust' {
-                        qui stcox `temp_var', vce(robust)
-                    }
-                    else {
-                        qui stcox `temp_var'
-                    }
-                }
-                
-                if _rc == 0 {
-                    local est = exp(_b[`temp_var'])
-                    local lb = exp(_b[`temp_var'] - 1.96*_se[`temp_var'])
-                    local ub = exp(_b[`temp_var'] + 1.96*_se[`temp_var'])
-                    
-                    if `est' == 1 {
-                        local ratio_display "(empty)"
-                    }
-                    else {
-                        local ratio_display = string(`est', "%9.`ratiodigit'f") + " (" + string(`lb', "%9.`ratiodigit'f") + "-" + string(`ub', "%9.`ratiodigit'f") + ")"
-                    }
-                    
-                    local p = 2 * (1 - normal(abs(_b[`temp_var']/_se[`temp_var'])))
-                    if `p' < 0.001 {
-                        local p_str = "<0.001"
-                    } 
-                    else {
-                        local p_str = string(`p', "%9.`pdigit'f")
-                    }
-                    
-                    if "`pnote'" == "TRUE" {
-                        local p_display "`p_str'<sup>a</sup>"
-                    } 
-                    else {
-                        local p_display "`p_str'"
-                    }
-                }
-                else {
-                    local ratio_display ""
-                    local p_display ""
-                }
-            }
-            drop `temp_var'
-        }
-        
-        file write `hh' "<tr>" _n ///
-            "<td class='indent'>`vallabel'</td>" _n ///
-            "<td class='center'>`n1' (`pct1'%)</td>" _n ///
-            "<td class='center'>`n0' (`pct0'%)</td>" _n ///
-            "<td class='center'>`p_display'</td>" _n
-        
-        // Add ptest value only for first level
-        if `have_ptest' {
-            if `first_level' == 1 {
-                file write `hh' "<td class='center' rowspan='`num_levels''>`ptest_display'</td>" _n
-                local first_level = 0
-            }
-        }
-        
-        file write `hh' "<td class='center'>`ratio_display'</td>" _n ///
-            "</tr>" _n
-    }
+    file write `hh' "<td class='center'>`ratio_display'</td>" _n ///
+        "</tr>" _n
+}
 }
 
 local timestamp = c(current_date) + " " + c(current_time)
 file write `hh' "</table>" _n
+
+// Display information about the custom reference levels if any were used
+if "`var_refs'" != "" {
+    file write `hh' "<p><strong>Reference levels used:</strong><br>" _n
+    foreach item of local var_refs {
+        if regexm("`item'", "^(.+)=(.+)$") {
+            local var_name = regexs(1)
+            local ref_num = regexs(2)
+            local var_label: variable label `var_name'
+            if "`var_label'" == "" local var_label "`var_name'"
+            
+            // Get the value label if it exists
+            local ref_label = "`ref_num'"
+            capture local ref_value_label: label (`var_name') `ref_num'
+            if !_rc & "`ref_value_label'" != "" {
+                local ref_label = "`ref_value_label'"
+            }
+            
+            file write `hh' "`var_label': `ref_label' (level `ref_num')<br>" _n
+        }
+    }
+    file write `hh' "</p>" _n
+}
 
 if "`pnote'" == "TRUE" {
     // Dynamic footnotes - only show those that were used
@@ -1141,13 +1087,53 @@ file write `hh' "<p class='timestamp'>`timestamp_label' `timestamp'</p>" _n ///
 
 file close `hh'
 
-local fullpath = "file:" + c(pwd) + "/" + "`output'"
-display as text _n "Copy liên kết dán vào trình duyệt hoặc tìm nguồn mở file {browse `fullpath'}"
+// Display link to the created file
+    local fullpath = "file:" + c(pwd) + "/" + "`output'"
+    display as text _n "Copy liên kết dán vào trình duyệt hoặc tìm nguồn mở file {browse `fullpath'}"
+    
 
-if "`autoopen'" != "" {
     shell start "" "`fullpath'"
-}
+    if "`autoopen'" != "" {
+        shell start "`output'"
+    }
+    
+    return local output "`output'"
+    return local timestamp "`timestamp'"
+end
 
-return local output "`output'"
-return local timestamp "`timestamp'"
+
+
+capture program drop checkqname
+program define checkqname, rclass
+    version 11
+    
+    // Get the original variable list
+    local orig_varlist `0'
+    
+    // Initialize 
+    local clean_varlist ""
+    local ib_opts ""
+    
+    // Extract each variable
+    foreach word of local orig_varlist {
+        // Check if it has the ib pattern
+        if regexm("`word'", "^ib([0-9]+)\.(.+)$") {
+            local ref_num = regexs(1)
+            local var_name = regexs(2)
+            
+            // Add to clean list
+            local clean_varlist "`clean_varlist' `var_name'"
+            
+            // Add to reference levels
+            local ib_opts "`ib_opts' `var_name'=`ref_num'"
+        }
+        else {
+            // Regular variable
+            local clean_varlist "`clean_varlist' `word'"
+        }
+    }
+    
+    // Return values
+    return local varlist "`clean_varlist'"
+    return local ib_opts "`ib_opts'"
 end
