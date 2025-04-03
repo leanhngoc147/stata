@@ -2,7 +2,7 @@ capture program drop rasenganhtml
 program define rasenganhtml, rclass
     syntax varlist [if] [in], by(varname) [ib(integer 1)] [ratio(string)] [per(string)] [p(string)] ///
         [output(string)] [digit(integer 1)] [autoopen] [title(string)] [pnote(string)] [lang(string)] [N(string)] [ptest(string)] ///
-        [pdigit(integer 3)] [ratiodigit(integer 2)] [robust(string)]
+        [pdigit(integer 3)] [ratiodigit(integer 2)] [robust(string)] [event(varname)] [eventtime(varname)] [eventvalue(string)]
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⡀⠑⠒⠀⠠⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⣘⠖⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠴⡖⠒⠒⠈⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀"
@@ -36,9 +36,17 @@ program define rasenganhtml, rclass
     
     if "`ratio'" == "" local ratio "OR"
     local ratio = upper("`ratio'")
-    if !inlist("`ratio'", "OR", "RR", "PR") {
-        display as error "ratio() phải là OR, RR, hoặc PR"
+    if !inlist("`ratio'", "OR", "RR", "PR", "HR") {
+        display as error "ratio() phải là OR, RR, PR, hoặc HR"
         exit 198
+    }
+    
+    // Check HR requirements
+    if "`ratio'" == "HR" {
+        if "`event'" == "" | "`eventtime'" == "" | "`eventvalue'" == "" {
+            display as error "Khi ratio(HR), phải khai báo event(), eventtime(), và eventvalue()"
+            exit 198
+        }
     }
     
     if "`per'" == "" local per "row"
@@ -86,6 +94,9 @@ program define rasenganhtml, rclass
         else if inlist("`ratio'", "PR", "RR") {
             local footnote_a "Hồi quy Poisson"
         } 
+        else if "`ratio'" == "HR" {
+            local footnote_a "Hồi quy Cox"
+        }
         else {
             local footnote_a "Kiểm định chi bình phương"
         }
@@ -93,6 +104,7 @@ program define rasenganhtml, rclass
         local footnote_c "Kiểm định Mann-Whitney"
         local footnote_d "Kiểm định Fisher's exact"
         local footnote_e "Kiểm định chi bình phương"
+        local footnote_f "Kiểm định log-rank"
         local ref_label "1"
         local ptest_header "p-kiểm định"
     }
@@ -110,6 +122,9 @@ program define rasenganhtml, rclass
         else if inlist("`ratio'", "PR", "RR") {
             local footnote_a "Poisson regression"
         } 
+        else if "`ratio'" == "HR" {
+            local footnote_a "Cox regression"
+        }
         else {
             local footnote_a "Chi-square test"
         }
@@ -117,6 +132,7 @@ program define rasenganhtml, rclass
         local footnote_c "Mann-Whitney test"
         local footnote_d "Fisher's exact test"
         local footnote_e "Chi-square test"
+        local footnote_f "Log-rank test"
         local ref_label "ref"
         local ptest_header "p-value"
     }
@@ -133,6 +149,118 @@ program define rasenganhtml, rclass
                 exit 603
             }
         }
+        
+        // Count number of levels for rowspan
+        local num_levels: word count `levels'
+        
+        // Process each level of the categorical variable
+        local first_level = 1
+        foreach l of local levels {
+            local vallabel: label (`var') `l'
+            if "`vallabel'" == "" local vallabel "`l'"
+            
+            qui count if `var' == `l' & `by' == 1
+            local n1 = r(N)
+            qui count if `by' == 1
+            local total1 = r(N)
+            
+            qui count if `var' == `l' & `by' == 0
+            local n0 = r(N)
+            qui count if `by' == 0
+            local total0 = r(N)
+            
+            if "`per'" == "row" {
+                local total_row = `n1' + `n0'
+                local pct1 = string(100 * `n1'/`total_row', "%9.`digit'f")
+                local pct0 = string(100 * `n0'/`total_row', "%9.`digit'f")
+            }
+            else {
+                local pct1 = string(100 * `n1'/`total1', "%9.`digit'f")
+                local pct0 = string(100 * `n0'/`total0', "%9.`digit'f")
+            }
+            
+            if `l' == `ref_level' {
+                local ratio_display "`ref_label'"
+                local p_display ""
+                
+                // For reference level, we don't display p-value in the main p column
+            }
+            else {
+                tempvar temp_var
+                gen `temp_var' = `var'
+                recode `temp_var' (`l'=1) (`ref_level'=0) (else=.)
+                
+                capture {
+                    if "`ratio'" == "OR" {
+                        if `use_robust' {
+                            qui logistic `by' `temp_var', vce(robust)
+                        }
+                        else {
+                            qui logistic `by' `temp_var'
+                        }
+                    }
+                    else if "`ratio'" == "RR" {
+                        if `use_robust' {
+                            qui poisson `by' `temp_var', irr vce(robust)
+                        }
+                        else {
+                            qui poisson `by' `temp_var', irr
+                        }
+                    }
+                    else if "`ratio'" == "PR" {
+                        if `use_robust' {
+                            qui glm `by' `temp_var', family(poisson) link(log) eform vce(robust)
+                        }
+                        else {
+                            qui glm `by' `temp_var', family(poisson) link(log) eform
+                        }
+                    }
+                    else if "`ratio'" == "HR" {
+                        // Setup survival data if not already done
+                        qui stset `eventtime', failure(`event' == `eventvalue')
+                        
+                        if `use_robust' {
+                            qui stcox `temp_var', vce(robust)
+                        }
+                        else {
+                            qui stcox `temp_var'
+                        }
+                    }
+                    
+                    if _rc == 0 {
+                        local est = exp(_b[`temp_var'])
+                        local lb = exp(_b[`temp_var'] - 1.96*_se[`temp_var'])
+                        local ub = exp(_b[`temp_var'] + 1.96*_se[`temp_var'])
+                        
+                        if `est' == 1 {
+                            local ratio_display "(empty)"
+                        }
+                        else {
+                            local ratio_display = string(`est', "%9.`ratiodigit'f") + " (" + string(`lb', "%9.`ratiodigit'f") + "-" + string(`ub', "%9.`ratiodigit'f") + ")"
+                        }
+                        
+                        local p = 2 * (1 - normal(abs(_b[`temp_var']/_se[`temp_var'])))
+                        if `p' < 0.001 {
+                            local p_str = "<0.001"
+                        } 
+                        else {
+                            local p_str = string(`p', "%9.`pdigit'f")
+                        }
+                        
+                        if "`pnote'" == "TRUE" {
+                            local p_display "`p_str'<sup>a</sup>"
+                        } 
+                        else {
+                            local p_display "`p_str'"
+                        }
+                    }
+                    else {
+                        local ratio_display ""
+                        local p_display ""
+                    }
+                }
+                drop `temp_var'
+            }
     }
     else {
         if !ustrregexm("`output'", "\.html$") {
@@ -264,6 +392,166 @@ program define rasenganhtml, rclass
 
     // Create locals to track which footnotes are used
     local used_notes ""
+    
+    // Track if we've added survival data for HR
+    local added_survival_data = 0
+    
+    // For HR, we need to add survival summary statistics first
+    if "`ratio'" == "HR" & `added_survival_data' == 0 {
+        // Add a header for survival data
+        if "`lang'" == "vie" {
+            local surv_header = "Phân tích sống còn"
+        } 
+        else {
+            local surv_header = "Survival Analysis"
+        }
+        
+        // Calculate the colspan based on whether ptest is present
+        local colspan = 5
+        if `have_ptest' local colspan = 6
+        
+        file write `hh' "<tr><td class='group-header' colspan='`colspan''>`surv_header'</td></tr>" _n
+        
+        // Get event counts for each group
+        local ev_value = `eventvalue'
+        qui count if `event' == `ev_value' & `by' == 1
+        local events1 = r(N)
+        qui count if `by' == 1
+        local total1 = r(N)
+        
+        qui count if `event' == `ev_value' & `by' == 0
+        local events0 = r(N)
+        qui count if `by' == 0
+        local total0 = r(N)
+        
+        // Calculate incidence rates for each group
+        qui sum `eventtime' if `by' == 1
+        local total_time1 = r(sum)
+        local rate1 = `events1' / `total_time1' * 1000  // per 1000 person-time
+        
+        qui sum `eventtime' if `by' == 0
+        local total_time0 = r(sum)
+        local rate0 = `events0' / `total_time0' * 1000  // per 1000 person-time
+        
+        // Format the rates
+        local rate1_str = string(`rate1', "%9.`digit'f")
+        local rate0_str = string(`rate0', "%9.`digit'f")
+        
+        // Calculate median survival time
+        tempname surv1 surv0
+        qui stset `eventtime' if `by' == 1, failure(`event' == `ev_value')
+        qui stci, p(50)
+        local med_surv1 = r(p50)
+        if "`med_surv1'" == "." {
+            local med_surv1_str = "NA"
+        } 
+        else {
+            local med_surv1_str = string(`med_surv1', "%9.`digit'f")
+        }
+        
+        qui stset `eventtime' if `by' == 0, failure(`event' == `ev_value')
+        qui stci, p(50)
+        local med_surv0 = r(p50)
+        if "`med_surv0'" == "." {
+            local med_surv0_str = "NA"
+        } 
+        else {
+            local med_surv0_str = string(`med_surv0', "%9.`digit'f")
+        }
+        
+        // Perform log-rank test
+        qui stset `eventtime', failure(`event' == `ev_value')
+        qui sts test `by'
+        local logrank_p = r(p)
+        if `logrank_p' < 0.001 {
+            local logrank_p_str = "<0.001"
+        } 
+        else {
+            local logrank_p_str = string(`logrank_p', "%9.3f")
+        }
+        
+        if "`pnote'" == "TRUE" {
+            local logrank_p_display "`logrank_p_str'<sup>f</sup>"
+            local used_notes "`used_notes' f"
+        }
+        else {
+            local logrank_p_display "`logrank_p_str'"
+        }
+        
+        // Add event count row
+        if "`lang'" == "vie" {
+            local events_label = "Số biến cố/Tổng"
+        } 
+        else {
+            local events_label = "Events/Total"
+        }
+        
+        file write `hh' "<tr>" _n ///
+            "<td class='indent'>`events_label'</td>" _n ///
+            "<td class='center'>`events1'/`total1'</td>" _n ///
+            "<td class='center'>`events0'/`total0'</td>" _n ///
+            "<td class='center'>`logrank_p_display'</td>" _n
+        
+        // Add ptest cell if specified
+        if `have_ptest' {
+            file write `hh' "<td class='center' rowspan='2'>`logrank_p_display'</td>" _n
+        }
+        
+        // Calculate crude HR for this row
+        qui stcox `by'
+        local crude_hr = exp(_b[`by'])
+        local crude_hr_lb = exp(_b[`by'] - 1.96*_se[`by'])
+        local crude_hr_ub = exp(_b[`by'] + 1.96*_se[`by'])
+        
+        local crude_hr_display = string(`crude_hr', "%9.`ratiodigit'f") + " (" + string(`crude_hr_lb', "%9.`ratiodigit'f") + "-" + string(`crude_hr_ub', "%9.`ratiodigit'f") + ")"
+        
+        file write `hh' "<td class='center' rowspan='1'>`crude_hr_display'</td>" _n ///
+            "</tr>" _n
+        
+        // Add incidence rate row
+        if "`lang'" == "vie" {
+            local rate_label = "Tỷ suất mới mắc (trên 1000 đơn vị thời gian)"
+        } 
+        else {
+            local rate_label = "Incidence rate (per 1000 person-time)"
+        }
+        
+        file write `hh' "<tr>" _n ///
+            "<td class='indent'>`rate_label'</td>" _n ///
+            "<td class='center'>`rate1_str'</td>" _n ///
+            "<td class='center'>`rate0_str'</td>" _n ///
+            "<td class='center'></td>" _n
+        
+        if `have_ptest' {
+            // Already added in events row with rowspan=2
+        }
+        
+        file write `hh' "<td class='center'></td>" _n ///
+            "</tr>" _n
+        
+        // Add median survival time row
+        if "`lang'" == "vie" {
+            local med_surv_label = "Trung vị thời gian sống còn"
+        } 
+        else {
+            local med_surv_label = "Median survival time"
+        }
+        
+        file write `hh' "<tr>" _n ///
+            "<td class='indent'>`med_surv_label'</td>" _n ///
+            "<td class='center'>`med_surv1_str'</td>" _n ///
+            "<td class='center'>`med_surv0_str'</td>" _n ///
+            "<td class='center'></td>" _n
+        
+        if `have_ptest' {
+            file write `hh' "<td class='center'></td>" _n
+        }
+        
+        file write `hh' "<td class='center'></td>" _n ///
+            "</tr>" _n
+        
+        local added_survival_data = 1
+    }
             
     foreach var of varlist `varlist' {
         // Create a temporary variable for tracking used test types
@@ -490,13 +778,14 @@ program define rasenganhtml, rclass
                 }
                 
                 // Calculate ratio based on choice
-                tempvar binary_outcome high_risk
-                qui sum `var', detail
-                local median_all = r(p50)
-                gen `binary_outcome' = `var' > `median_all' if !missing(`var')
+                local ratio_val = ""
                 
-                // Calculate ratio based on selected method (OR, RR, PR)
                 if "`ratio'" == "OR" {
+                    tempvar binary_outcome high_risk
+                    qui sum `var', detail
+                    local median_all = r(p50)
+                    gen `binary_outcome' = `var' > `median_all' if !missing(`var')
+                    
                     if `use_robust' {
                         qui logistic `by' `var', vce(robust)
                     }
@@ -510,9 +799,14 @@ program define rasenganhtml, rclass
                     local or_lb = exp(`beta' - 1.96*`se')
                     local or_ub = exp(`beta' + 1.96*`se')
                     
-                    local ratio_val = string(`or', "%9.2f") + " (" + string(`or_lb', "%9.2f") + "-" + string(`or_ub', "%9.2f") + ")"
+                    local ratio_val = string(`or', "%9.`ratiodigit'f") + " (" + string(`or_lb', "%9.`ratiodigit'f") + "-" + string(`or_ub', "%9.`ratiodigit'f") + ")"
                 }
                 else if "`ratio'" == "RR" {
+                    tempvar binary_outcome high_risk
+                    qui sum `var', detail
+                    local median_all = r(p50)
+                    gen `binary_outcome' = `var' > `median_all' if !missing(`var')
+                    
                     if `use_robust' {
                         qui poisson `by' `var', irr vce(robust)
                     }
@@ -526,9 +820,14 @@ program define rasenganhtml, rclass
                     local rr_lb = exp(`beta' - 1.96*`se')
                     local rr_ub = exp(`beta' + 1.96*`se')
                     
-                    local ratio_val = string(`rr', "%9.2f") + " (" + string(`rr_lb', "%9.2f") + "-" + string(`rr_ub', "%9.2f") + ")"
+                    local ratio_val = string(`rr', "%9.`ratiodigit'f") + " (" + string(`rr_lb', "%9.`ratiodigit'f") + "-" + string(`rr_ub', "%9.`ratiodigit'f") + ")"
                 }
                 else if "`ratio'" == "PR" {
+                    tempvar binary_outcome high_risk
+                    qui sum `var', detail
+                    local median_all = r(p50)
+                    gen `binary_outcome' = `var' > `median_all' if !missing(`var')
+                    
                     if `use_robust' {
                         qui poisson `by' `var', irr vce(robust)
                     }
@@ -542,7 +841,26 @@ program define rasenganhtml, rclass
                     local pr_lb = exp(`beta' - 1.96*`se')
                     local pr_ub = exp(`beta' + 1.96*`se')
                     
-                    local ratio_val = string(`pr', "%9.2f") + " (" + string(`pr_lb', "%9.2f") + "-" + string(`pr_ub', "%9.2f") + ")"
+                    local ratio_val = string(`pr', "%9.`ratiodigit'f") + " (" + string(`pr_lb', "%9.`ratiodigit'f") + "-" + string(`pr_ub', "%9.`ratiodigit'f") + ")"
+                }
+                else if "`ratio'" == "HR" {
+                    // Setup survival data if not already done
+                    qui stset `eventtime', failure(`event' == `eventvalue')
+                    
+                    if `use_robust' {
+                        qui stcox `var', vce(robust)
+                    }
+                    else {
+                        qui stcox `var'
+                    }
+                    local beta = _b[`var']
+                    local se = _se[`var']
+                    
+                    local hr = exp(`beta')
+                    local hr_lb = exp(`beta' - 1.96*`se')
+                    local hr_ub = exp(`beta' + 1.96*`se')
+                    
+                    local ratio_val = string(`hr', "%9.`ratiodigit'f") + " (" + string(`hr_lb', "%9.`ratiodigit'f") + "-" + string(`hr_ub', "%9.`ratiodigit'f") + ")"
                 }
                 
                 // Write Mean ± SD row
@@ -568,7 +886,10 @@ program define rasenganhtml, rclass
                     "<td class='center'>`p_ranksum_display'</td>" _n ///
                     "</tr>" _n
                 
-                drop `binary_outcome'
+                if "`ratio'" != "HR" & "`binary_outcome'" != "" {
+                    drop `binary_outcome'
+                }
+                
                 continue
             }
         }
@@ -646,175 +967,187 @@ program define rasenganhtml, rclass
             }
             
             if "`pnote'" == "TRUE" {
-                local ptest_display "`ptest_value'<sup>`test_type'</sup>"
-            } 
-            else {
-                local ptest_display "`ptest_value'"
-            }
+            local ptest_display "`ptest_value'<sup>`test_type'</sup>"
+        } 
+        else {
+            local ptest_display "`ptest_value'"
+        }
+    }
+    
+    // Count number of levels for rowspan
+    local num_levels: word count `levels'
+    
+    // Process each level of the categorical variable
+    local first_level = 1
+    foreach l of local levels {
+        local vallabel: label (`var') `l'
+        if "`vallabel'" == "" local vallabel "`l'"
+        
+        qui count if `var' == `l' & `by' == 1
+        local n1 = r(N)
+        qui count if `by' == 1
+        local total1 = r(N)
+        
+        qui count if `var' == `l' & `by' == 0
+        local n0 = r(N)
+        qui count if `by' == 0
+        local total0 = r(N)
+        
+        if "`per'" == "row" {
+            local total_row = `n1' + `n0'
+            local pct1 = string(100 * `n1'/`total_row', "%9.`digit'f")
+            local pct0 = string(100 * `n0'/`total_row', "%9.`digit'f")
+        }
+        else {
+            local pct1 = string(100 * `n1'/`total1', "%9.`digit'f")
+            local pct0 = string(100 * `n0'/`total0', "%9.`digit'f")
         }
         
-        // Count number of levels for rowspan
-        local num_levels: word count `levels'
-        
-        // Process each level of the categorical variable
-        local first_level = 1
-        foreach l of local levels {
-            local vallabel: label (`var') `l'
-            if "`vallabel'" == "" local vallabel "`l'"
+        if `l' == `ref_level' {
+            local ratio_display "`ref_label'"
+            local p_display ""
             
-            qui count if `var' == `l' & `by' == 1
-            local n1 = r(N)
-            qui count if `by' == 1
-            local total1 = r(N)
+            // For reference level, we don't display p-value in the main p column
+        }
+        else {
+            tempvar temp_var
+            gen `temp_var' = `var'
+            recode `temp_var' (`l'=1) (`ref_level'=0) (else=.)
             
-            qui count if `var' == `l' & `by' == 0
-            local n0 = r(N)
-            qui count if `by' == 0
-            local total0 = r(N)
-            
-            if "`per'" == "row" {
-                local total_row = `n1' + `n0'
-                local pct1 = string(100 * `n1'/`total_row', "%9.`digit'f")
-                local pct0 = string(100 * `n0'/`total_row', "%9.`digit'f")
-            }
-            else {
-                local pct1 = string(100 * `n1'/`total1', "%9.`digit'f")
-                local pct0 = string(100 * `n0'/`total0', "%9.`digit'f")
-            }
-            
-            if `l' == `ref_level' {
-                local ratio_display "`ref_label'"
-                local p_display ""
-                
-                // For reference level, we don't display p-value in the main p column
-            }
-            else {
-                tempvar temp_var
-                gen `temp_var' = `var'
-                recode `temp_var' (`l'=1) (`ref_level'=0) (else=.)
-                
-                capture {
-                    if "`ratio'" == "OR" {
-                        if `use_robust' {
-                            qui logistic `by' `temp_var', vce(robust)
-                        }
-                        else {
-                            qui logistic `by' `temp_var'
-                        }
-                    }
-                    else if "`ratio'" == "RR" {
-                        if `use_robust' {
-                            qui poisson `by' `temp_var', irr vce(robust)
-                        }
-                        else {
-                            qui poisson `by' `temp_var', irr
-                        }
+            capture {
+                if "`ratio'" == "OR" {
+                    if `use_robust' {
+                        qui logistic `by' `temp_var', vce(robust)
                     }
                     else {
-                        if `use_robust' {
-                            qui glm `by' `temp_var', family(poisson) link(log) eform vce(robust)
-                        }
-                        else {
-                            qui glm `by' `temp_var', family(poisson) link(log) eform
-                        }
+                        qui logistic `by' `temp_var'
+                    }
+                }
+                else if "`ratio'" == "RR" {
+                    if `use_robust' {
+                        qui poisson `by' `temp_var', irr vce(robust)
+                    }
+                    else {
+                        qui poisson `by' `temp_var', irr
+                    }
+                }
+                else if "`ratio'" == "PR" {
+                    if `use_robust' {
+                        qui glm `by' `temp_var', family(poisson) link(log) eform vce(robust)
+                    }
+                    else {
+                        qui glm `by' `temp_var', family(poisson) link(log) eform
+                    }
+                }
+                else if "`ratio'" == "HR" {
+                    // Setup survival data if not already done
+                    qui stset `eventtime', failure(`event' == `eventvalue')
+                    
+                    if `use_robust' {
+                        qui stcox `temp_var', vce(robust)
+                    }
+                    else {
+                        qui stcox `temp_var'
+                    }
+                }
+                
+                if _rc == 0 {
+                    local est = exp(_b[`temp_var'])
+                    local lb = exp(_b[`temp_var'] - 1.96*_se[`temp_var'])
+                    local ub = exp(_b[`temp_var'] + 1.96*_se[`temp_var'])
+                    
+                    if `est' == 1 {
+                        local ratio_display "(empty)"
+                    }
+                    else {
+                        local ratio_display = string(`est', "%9.`ratiodigit'f") + " (" + string(`lb', "%9.`ratiodigit'f") + "-" + string(`ub', "%9.`ratiodigit'f") + ")"
                     }
                     
-                    if _rc == 0 {
-                        local est = exp(_b[`temp_var'])
-                        local lb = exp(_b[`temp_var'] - 1.96*_se[`temp_var'])
-                        local ub = exp(_b[`temp_var'] + 1.96*_se[`temp_var'])
-                        
-                        if `est' == 1 {
-                            local ratio_display "(empty)"
-                        }
-                        else {
-                            local ratio_display = string(`est', "%9.`ratiodigit'f") + " (" + string(`lb', "%9.`ratiodigit'f") + "-" + string(`ub', "%9.`ratiodigit'f") + ")"
-                        }
-                        
-                        local p = 2 * (1 - normal(abs(_b[`temp_var']/_se[`temp_var'])))
-                        if `p' < 0.001 {
-                            local p_str = "<0.001"
-                        } 
-                        else {
-                            local p_str = string(`p', "%9.`pdigit'f")
-                        }
-                        
-                        if "`pnote'" == "TRUE" {
-                            local p_display "`p_str'<sup>a</sup>"
-                        } 
-                        else {
-                            local p_display "`p_str'"
-                        }
-                    }
+                    local p = 2 * (1 - normal(abs(_b[`temp_var']/_se[`temp_var'])))
+                    if `p' < 0.001 {
+                        local p_str = "<0.001"
+                    } 
                     else {
-                        local ratio_display ""
-                        local p_display ""
+                        local p_str = string(`p', "%9.`pdigit'f")
+                    }
+                    
+                    if "`pnote'" == "TRUE" {
+                        local p_display "`p_str'<sup>a</sup>"
+                    } 
+                    else {
+                        local p_display "`p_str'"
                     }
                 }
-                drop `temp_var'
-            }
-            
-            file write `hh' "<tr>" _n ///
-                "<td class='indent'>`vallabel'</td>" _n ///
-                "<td class='center'>`n1' (`pct1'%)</td>" _n ///
-                "<td class='center'>`n0' (`pct0'%)</td>" _n ///
-                "<td class='center'>`p_display'</td>" _n
-            
-            // Add ptest value only for first level
-            if `have_ptest' {
-                if `first_level' == 1 {
-                    file write `hh' "<td class='center' rowspan='`num_levels''>`ptest_display'</td>" _n
-                    local first_level = 0
+                else {
+                    local ratio_display ""
+                    local p_display ""
                 }
             }
-            
-            file write `hh' "<td class='center'>`ratio_display'</td>" _n ///
-                "</tr>" _n
+            drop `temp_var'
         }
-    }
-    
-    local timestamp = c(current_date) + " " + c(current_time)
-    file write `hh' "</table>" _n
-    
-    if "`pnote'" == "TRUE" {
-        // Dynamic footnotes - only show those that were used
-        file write `hh' "<p class='footnote'>" _n
-        if strpos("`used_notes'", "a") > 0 {
-            file write `hh' "a: `footnote_a'"
-            if `use_robust' {
-                file write `hh' " with robust standard error"
+        
+        file write `hh' "<tr>" _n ///
+            "<td class='indent'>`vallabel'</td>" _n ///
+            "<td class='center'>`n1' (`pct1'%)</td>" _n ///
+            "<td class='center'>`n0' (`pct0'%)</td>" _n ///
+            "<td class='center'>`p_display'</td>" _n
+        
+        // Add ptest value only for first level
+        if `have_ptest' {
+            if `first_level' == 1 {
+                file write `hh' "<td class='center' rowspan='`num_levels''>`ptest_display'</td>" _n
+                local first_level = 0
             }
-            file write `hh' "<br>" _n
         }
-        if strpos("`used_notes'", "b") > 0 {
-            file write `hh' "b: `footnote_b'<br>" _n
-        }
-        if strpos("`used_notes'", "c") > 0 {
-            file write `hh' "c: `footnote_c'<br>" _n
-        }
-        if strpos("`used_notes'", "d") > 0 {
-            file write `hh' "d: `footnote_d'<br>" _n
-        }
-        if strpos("`used_notes'", "e") > 0 {
-            file write `hh' "e: `footnote_e'<br>" _n
-        }
-        file write `hh' "</p>" _n
+        
+        file write `hh' "<td class='center'>`ratio_display'</td>" _n ///
+            "</tr>" _n
     }
-    
-    file write `hh' "<p class='timestamp'>`timestamp_label' `timestamp'</p>" _n ///
-        "</body></html>" _n
-    
-    file close `hh'
-    
-    local fullpath = "file:" + c(pwd) + "/" + "`output'"
-    display as text _n "Copy liên kết dán vào trình duyệt hoặc tìm nguồn mở file {browse `fullpath'}"
-    
+}
 
-    shell start "" "`fullpath'"
-    if "`autoopen'" != "" {
-        shell start "`output'"
+local timestamp = c(current_date) + " " + c(current_time)
+file write `hh' "</table>" _n
+
+if "`pnote'" == "TRUE" {
+    // Dynamic footnotes - only show those that were used
+    file write `hh' "<p class='footnote'>" _n
+    if strpos("`used_notes'", "a") > 0 {
+        file write `hh' "a: `footnote_a'"
+        if `use_robust' {
+            file write `hh' " with robust standard error"
+        }
+        file write `hh' "<br>" _n
     }
-    
-    return local output "`output'"
-    return local timestamp "`timestamp'"
+    if strpos("`used_notes'", "b") > 0 {
+        file write `hh' "b: `footnote_b'<br>" _n
+    }
+    if strpos("`used_notes'", "c") > 0 {
+        file write `hh' "c: `footnote_c'<br>" _n
+    }
+    if strpos("`used_notes'", "d") > 0 {
+        file write `hh' "d: `footnote_d'<br>" _n
+    }
+    if strpos("`used_notes'", "e") > 0 {
+        file write `hh' "e: `footnote_e'<br>" _n
+    }
+    if strpos("`used_notes'", "f") > 0 {
+        file write `hh' "f: `footnote_f'<br>" _n
+    }
+    file write `hh' "</p>" _n
+}
+
+file write `hh' "<p class='timestamp'>`timestamp_label' `timestamp'</p>" _n ///
+    "</body></html>" _n
+
+file close `hh'
+
+local fullpath = "file:" + c(pwd) + "/" + "`output'"
+display as text _n "Copy liên kết dán vào trình duyệt hoặc tìm nguồn mở file {browse `fullpath'}"
+
+if "`autoopen'" != "" {
+    shell start "" "`fullpath'"
+}
+
+return local output "`output'"
+return local timestamp "`timestamp'"
 end
