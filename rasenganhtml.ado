@@ -1093,14 +1093,14 @@ file close `hh'
     
 
     shell start "" "`fullpath'"
+
     if "`autoopen'" != "" {
         shell start "`output'"
     }
-    
+
     return local output "`output'"
     return local timestamp "`timestamp'"
 end
-
 
 
 capture program drop checkqname
