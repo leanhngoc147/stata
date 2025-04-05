@@ -3,7 +3,7 @@ program define rasenganhtml, rclass
     syntax anything(name=orig_varlist id="variable list") [if] [in], by(varname) ///
         [ib(integer 1)] [ratio(string)] [per(string)] [p(string)] ///
         [output(string)] [digit(integer 1)] [autoopen] [title(string)] [pnote(string)] [lang(string)] [N(string)] [ptest(string)] ///
-        [pdigit(integer 3)] [ratiodigit(integer 2)] [robust(string)] [event(varname)] [eventtime(varname)] [eventvalue(string)]
+        [pdigit(integer 3)] [ratiodigit(integer 2)] [robust] [event(varname)] [eventtime(varname)] [eventvalue(string)] [all]
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⡀⠑⠒⠀⠠⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⣘⠖⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠴⡖⠒⠒⠈⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀"
@@ -27,11 +27,7 @@ program define rasenganhtml, rclass
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⡀⠀⡎⡸⠀⠀⢸⠀⠀⠀⠀⢠⣀⠖⠖⠉⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢠⠃⠀⠀⣿⣶⣶⣶⣶⠖⠁⠀⠀⡄⠐⠃⠀⠀⠎⠀⠀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢁⠎⠀⠀⣸⠿⠟⠛⠛⢣⠀⢀⣴⡟⠁⠀⢀⣀⡠⢤⣀⣀⠀⠀⠀⠀⠀⠀⠀   "
-		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⠎⠀⡀⣠⡿⠒⠢⡀⣠⠎⠀⢸⡏⠀⢀⠴⣯⣅⢀⢀⡉⣀⠀⣀⣨⣿⣿⣿⣿   "	
-		
-		
-		
-		
+		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⠎⠀⡀⣠⡿⠒⠢⡀⣠⠎⠀⢸⡏⠀⢀⠴⣯⣅⢀⢀⡉⣀⠀⣀⣨⣿⣿⣿⣿   "		
 		
     // Process the variable list with checkqname
     capture checkqname `orig_varlist' `if' `in'
@@ -83,17 +79,10 @@ program define rasenganhtml, rclass
         exit 198
     }
     
-    // Validate robust option
+    // Robust is now a simple flag option, not a string option with true/false
     local use_robust = 0
     if "`robust'" != "" {
-        local robust = lower("`robust'")
-        if "`robust'" == "true" {
-            local use_robust = 1
-        }
-        else if "`robust'" != "false" {
-            display as error "robust() phải là true hoặc false"
-            exit 198
-        }
+        local use_robust = 1
     }
     
     // Validate ptest option
@@ -111,6 +100,7 @@ program define rasenganhtml, rclass
         local ratio_header "`ratio' (KTC 95%)"
         if "`title'" == "" local title "KẾT QUẢ PHÂN TÍCH"
         local char_header "ĐẶC ĐIỂM"
+        local total_header "TỔNG"
         local mean_label "Trung bình ± ĐLC"
         local median_label "Trung vị (IQR)"
         local timestamp_label "Được tạo lúc:"
@@ -139,6 +129,7 @@ program define rasenganhtml, rclass
         local ratio_header "`ratio' (95% CI)"
         if "`title'" == "" local title "ANALYSIS RESULTS"
         local char_header "CHARACTERISTICS"
+        local total_header "TOTAL"
         local mean_label "Mean ± SD"
         local median_label "Median (IQR)"
         local timestamp_label "Generated at:"
@@ -288,9 +279,17 @@ program define rasenganhtml, rclass
         "</div>" _n ///
         "<table>" _n
 
-    file write `hh' "<tr>" _n ///
-        "<th rowspan='2' style='text-align: left;'>`char_header'</th>" _n ///
-        "<th colspan='2'>`bylab'</th>" _n ///
+    file write `hh' "<tr>" _n 
+    
+    // Write the first row with headers
+    file write `hh' "<th rowspan='2' style='text-align: left;'>`char_header'</th>" _n
+    
+    // Add Total column if [all] option is specified
+    if "`all'" != "" {
+        file write `hh' "<th rowspan='2'>`total_header'</th>" _n
+    }
+    
+    file write `hh' "<th colspan='2'>`bylab'</th>" _n ///
         "<th rowspan='2'>p</th>" _n 
     
     // Add ptest column if specified
@@ -321,9 +320,10 @@ program define rasenganhtml, rclass
             local surv_header = "Survival Analysis"
         }
         
-        // Calculate the colspan based on whether ptest is present
+        // Calculate the colspan based on whether ptest is present and if total column is added
         local colspan = 5
         if `have_ptest' local colspan = 6
+        if "`all'" != "" local colspan = `colspan' + 1
         
         file write `hh' "<tr><td class='group-header' colspan='`colspan''>`surv_header'</td></tr>" _n
         
@@ -339,6 +339,10 @@ program define rasenganhtml, rclass
         qui count if `by' == 0
         local total0 = r(N)
         
+        // Calculate total events and total subjects
+        local events_total = `events1' + `events0'
+        local total_subjects = `total1' + `total0'
+        
         // Calculate incidence rates for each group
         qui sum `eventtime' if `by' == 1
         local total_time1 = r(sum)
@@ -348,9 +352,14 @@ program define rasenganhtml, rclass
         local total_time0 = r(sum)
         local rate0 = `events0' / `total_time0' * 1000  // per 1000 person-time
         
+        // Calculate total rate
+        local total_time = `total_time0' + `total_time1'
+        local rate_total = `events_total' / `total_time' * 1000  // per 1000 person-time
+        
         // Format the rates
         local rate1_str = string(`rate1', "%9.`digit'f")
         local rate0_str = string(`rate0', "%9.`digit'f")
+        local rate_total_str = string(`rate_total', "%9.`digit'f")
         
         // Calculate median survival time
         tempname surv1 surv0
@@ -372,6 +381,17 @@ program define rasenganhtml, rclass
         } 
         else {
             local med_surv0_str = string(`med_surv0', "%9.`digit'f")
+        }
+        
+        // Calculate overall median survival
+        qui stset `eventtime', failure(`event' == `ev_value')
+        qui stci, p(50)
+        local med_surv_total = r(p50)
+        if "`med_surv_total'" == "." {
+            local med_surv_total_str = "NA"
+        } 
+        else {
+            local med_surv_total_str = string(`med_surv_total', "%9.`digit'f")
         }
         
         // Perform log-rank test
@@ -402,8 +422,14 @@ program define rasenganhtml, rclass
         }
         
         file write `hh' "<tr>" _n ///
-            "<td class='indent'>`events_label'</td>" _n ///
-            "<td class='center'>`events1'/`total1'</td>" _n ///
+            "<td class='indent'>`events_label'</td>" _n
+        
+        // Add total column if [all] option is specified
+        if "`all'" != "" {
+            file write `hh' "<td class='center'>`events_total'/`total_subjects'</td>" _n
+        }
+        
+        file write `hh' "<td class='center'>`events1'/`total1'</td>" _n ///
             "<td class='center'>`events0'/`total0'</td>" _n ///
             "<td class='center'>`logrank_p_display'</td>" _n
         
@@ -432,8 +458,14 @@ program define rasenganhtml, rclass
         }
         
         file write `hh' "<tr>" _n ///
-            "<td class='indent'>`rate_label'</td>" _n ///
-            "<td class='center'>`rate1_str'</td>" _n ///
+            "<td class='indent'>`rate_label'</td>" _n
+        
+        // Add total column if [all] option is specified
+        if "`all'" != "" {
+            file write `hh' "<td class='center'>`rate_total_str'</td>" _n
+        }
+        
+        file write `hh' "<td class='center'>`rate1_str'</td>" _n ///
             "<td class='center'>`rate0_str'</td>" _n ///
             "<td class='center'></td>" _n
         
@@ -453,8 +485,14 @@ program define rasenganhtml, rclass
         }
         
         file write `hh' "<tr>" _n ///
-            "<td class='indent'>`med_surv_label'</td>" _n ///
-            "<td class='center'>`med_surv1_str'</td>" _n ///
+            "<td class='indent'>`med_surv_label'</td>" _n
+        
+        // Add total column if [all] option is specified
+        if "`all'" != "" {
+            file write `hh' "<td class='center'>`med_surv_total_str'</td>" _n
+        }
+        
+        file write `hh' "<td class='center'>`med_surv1_str'</td>" _n ///
             "<td class='center'>`med_surv0_str'</td>" _n ///
             "<td class='center'></td>" _n
         
@@ -575,9 +613,10 @@ program define rasenganhtml, rclass
             local varlab = "`varlab' (N=`n_total')"
         }
         
-        // Calculate the colspan based on whether ptest is present
+        // Calculate the colspan based on whether ptest is present and if total column is added
         local colspan = 5
         if `have_ptest' local colspan = 6
+        if "`all'" != "" local colspan = `colspan' + 1
         
         file write `hh' "<tr><td class='group-header' colspan='`colspan''>`varlab'</td></tr>" _n
         
@@ -600,89 +639,105 @@ program define rasenganhtml, rclass
             }
             
             if `is_categorical' == 0 {
-                // Mean and SD calculation
+                // Mean and SD calculation for each group
                 foreach l of numlist 0/1 {
                     qui sum `var' if `by' == `l'
                     local mean`l' = string(r(mean), "%9.`digit'f")
                     local sd`l' = string(r(sd), "%9.`digit'f")
                 }
                 
+                // Mean and SD calculation for all subjects if [all] option is specified
+                if "`all'" != "" {
+                    qui sum `var'
+                    local mean_all = string(r(mean), "%9.`digit'f") 
+                    local sd_all = string(r(sd), "%9.`digit'f")
+                }
+                
                 // T-test
-                qui ttest `var', by(`by')
-                local p_ttest = r(p)
-                if `p_ttest' < 0.001 {
-                    local p_ttest_str = "<0.001"
-                } 
-                else {
-                    local p_ttest_str = string(`p_ttest', "%9.3f")
-                }
-                
-                // Median and IQR calculation
-                foreach l of numlist 0/1 {
-                    qui sum `var' if `by' == `l', detail
-                    local median`l' = string(r(p50), "%9.`digit'f")
-                    local q1`l' = string(r(p25), "%9.`digit'f")
-                    local q3`l' = string(r(p75), "%9.`digit'f")
-                    local iqr`l' = "`q1`l''-`q3`l''"
-                }
-                
-                // Mann-Whitney test
-                qui ranksum `var', by(`by')
-                local p_ranksum = r(p)
-                if `p_ranksum' < 0.001 {
-                    local p_ranksum_str = "<0.001"
-                } 
-                else {
-                    local p_ranksum_str = string(`p_ranksum', "%9.3f")
-                }
-                
-                // Calculate regression p-value based on ratio type
-                local p_regression = .
-                local p_regression_str = ""
-                
-                if "`ratio'" == "OR" {
-                    if `use_robust' {
-                        qui logistic `by' `var', vce(robust)
-                    }
-                    else {
-                        qui logistic `by' `var'
-                    }
-                    local p_regression = 2 * (1 - normal(abs(_b[`var']/_se[`var'])))
-                }
-                else if "`ratio'" == "RR" || "`ratio'" == "PR" {
-                    if `use_robust' {
-                        qui poisson `by' `var', irr vce(robust)
-                    }
-                    else {
-                        qui poisson `by' `var', irr
-                    }
-                    local p_regression = 2 * (1 - normal(abs(_b[`var']/_se[`var'])))
-                }
-                else if "`ratio'" == "HR" {
-                    qui stset `eventtime', failure(`event' == `eventvalue')
-                    if `use_robust' {
-                        qui stcox `var', vce(robust)
-                    }
-                    else {
-                        qui stcox `var'
-                    }
-                    local p_regression = 2 * (1 - normal(abs(_b[`var']/_se[`var'])))
-                }
-                
-                if `p_regression' < 0.001 {
-                    local p_regression_str = "<0.001"
-                } 
-                else {
-                    local p_regression_str = string(`p_regression', "%9.3f")
-                }
-                
-                // Format regression p-value for display
-                if "`pnote'" == "TRUE" {
-                    local p_regression_display "`p_regression_str'<sup>a</sup>"
-                }
-                else {
-                    local p_regression_display "`p_regression_str'"
-                }
+qui ttest `var', by(`by')
+local p_ttest = r(p)
+if `p_ttest' < 0.001 {
+    local p_ttest_str = "<0.001"
+} 
+else {
+    local p_ttest_str = string(`p_ttest', "%9.3f")
+}
+
+// Median and IQR calculation for each group
+foreach l of numlist 0/1 {
+    qui sum `var' if `by' == `l', detail
+    local median`l' = string(r(p50), "%9.`digit'f")
+    local q1`l' = string(r(p25), "%9.`digit'f")
+    local q3`l' = string(r(p75), "%9.`digit'f")
+    local iqr`l' = "`q1`l''-`q3`l''"
+}
+
+// Median and IQR calculation for all subjects if [all] option is specified
+if "`all'" != "" {
+    qui sum `var', detail
+    local median_all = string(r(p50), "%9.`digit'f")
+    local q1_all = string(r(p25), "%9.`digit'f")
+    local q3_all = string(r(p75), "%9.`digit'f")
+    local iqr_all = "`q1_all'-`q3_all'"
+}
+
+// Mann-Whitney test
+qui ranksum `var', by(`by')
+local p_ranksum = r(p)
+if `p_ranksum' < 0.001 {
+    local p_ranksum_str = "<0.001"
+} 
+else {
+    local p_ranksum_str = string(`p_ranksum', "%9.3f")
+}
+
+// Calculate regression p-value based on ratio type
+local p_regression = .
+local p_regression_str = ""
+
+if "`ratio'" == "OR" {
+    if `use_robust' {
+        qui logistic `by' `var', vce(robust)
+    }
+    else {
+        qui logistic `by' `var'
+    }
+    local p_regression = 2 * (1 - normal(abs(_b[`var']/_se[`var'])))
+}
+else if "`ratio'" == "RR" || "`ratio'" == "PR" {
+    if `use_robust' {
+        qui poisson `by' `var', irr vce(robust)
+    }
+    else {
+        qui poisson `by' `var', irr
+    }
+    local p_regression = 2 * (1 - normal(abs(_b[`var']/_se[`var'])))
+}
+else if "`ratio'" == "HR" {
+    qui stset `eventtime', failure(`event' == `eventvalue')
+    if `use_robust' {
+        qui stcox `var', vce(robust)
+    }
+    else {
+        qui stcox `var'
+    }
+    local p_regression = 2 * (1 - normal(abs(_b[`var']/_se[`var'])))
+}
+
+if `p_regression' < 0.001 {
+    local p_regression_str = "<0.001"
+} 
+else {
+    local p_regression_str = string(`p_regression', "%9.3f")
+}
+
+// Format regression p-value for display
+if "`pnote'" == "TRUE" {
+    local p_regression_display "`p_regression_str'<sup>a</sup>"
+}
+else {
+    local p_regression_display "`p_regression_str'"
+}
 
 // Calculate additional p-value if ptest is specified
 if `have_ptest' {
@@ -837,8 +892,14 @@ else if "`ratio'" == "HR" {
 
 // Write Mean ± SD row
 file write `hh' "<tr>" _n ///
-    "<td class='indent'>`mean_label'</td>" _n ///
-    "<td class='center'>`mean1' ± `sd1'</td>" _n ///
+    "<td class='indent'>`mean_label'</td>" _n
+
+// Add total column if [all] option is specified
+if "`all'" != "" {
+    file write `hh' "<td class='center'>`mean_all' ± `sd_all'</td>" _n
+}
+
+file write `hh' "<td class='center'>`mean1' ± `sd1'</td>" _n ///
     "<td class='center'>`mean0' ± `sd0'</td>" _n ///
     "<td class='center'>`p_regression_display'</td>" _n
 
@@ -852,8 +913,14 @@ file write `hh' "<td class='center' rowspan='2'>`ratio_val'</td>" _n ///
 
 // Write Median (IQR) row
 file write `hh' "<tr>" _n ///
-    "<td class='indent'>`median_label'</td>" _n ///
-    "<td class='center'>`median1' (`iqr1')</td>" _n ///
+    "<td class='indent'>`median_label'</td>" _n
+
+// Add total column if [all] option is specified
+if "`all'" != "" {
+    file write `hh' "<td class='center'>`median_all' (`iqr_all')</td>" _n
+}
+
+file write `hh' "<td class='center'>`median1' (`iqr1')</td>" _n ///
     "<td class='center'>`median0' (`iqr0')</td>" _n ///
     "<td class='center'>`p_ranksum_display'</td>" _n ///
     "</tr>" _n
@@ -967,14 +1034,30 @@ foreach l of local levels {
     qui count if `by' == 0
     local total0 = r(N)
     
+    // Calculate total counts for all option
+    if "`all'" != "" {
+        qui count if `var' == `l'
+        local n_all = r(N)
+        qui count
+        local total_all = r(N)
+    }
+    
     if "`per'" == "row" {
         local total_row = `n1' + `n0'
         local pct1 = string(100 * `n1'/`total_row', "%9.`digit'f")
         local pct0 = string(100 * `n0'/`total_row', "%9.`digit'f")
+        
+        if "`all'" != "" {
+            local pct_all = string(100 * `n_all'/`total_all', "%9.`digit'f")
+        }
     }
     else {
         local pct1 = string(100 * `n1'/`total1', "%9.`digit'f")
         local pct0 = string(100 * `n0'/`total0', "%9.`digit'f")
+        
+        if "`all'" != "" {
+            local pct_all = string(100 * `n_all'/`total_all', "%9.`digit'f")
+        }
     }
     
     if `l' == `ref_level' {
@@ -1061,8 +1144,14 @@ foreach l of local levels {
     }
     
     file write `hh' "<tr>" _n ///
-        "<td class='indent'>`vallabel'</td>" _n ///
-        "<td class='center'>`n1' (`pct1'%)</td>" _n ///
+        "<td class='indent'>`vallabel'</td>" _n
+        
+    // Add total column if [all] option is specified
+    if "`all'" != "" {
+        file write `hh' "<td class='center'>`n_all' (`pct_all'%)</td>" _n
+    }
+    
+    file write `hh' "<td class='center'>`n1' (`pct1'%)</td>" _n ///
         "<td class='center'>`n0' (`pct0'%)</td>" _n ///
         "<td class='center'>`p_display'</td>" _n
     
@@ -1136,22 +1225,19 @@ if "`pnote'" == "TRUE" {
 file write `hh' "<p class='timestamp'>`timestamp_label' `timestamp'</p>" _n ///
     "</body></html>" _n
 
-
-
 // Display link to the created file
-    file close `hh'
-    
-    local fullpath = "file:" + c(pwd) + "/" + "`output'"
-    display as text _n "Copy liên kết dán vào trình duyệt hoặc tìm nguồn mở file {browse `fullpath'}"
-    
+file close `hh'
 
-    shell start "" "`fullpath'"
-    if "`autoopen'" != "" {
-        shell start "`output'"
-    }
+local fullpath = "file:" + c(pwd) + "/" + "`output'"
+display as text _n "Copy liên kết dán vào trình duyệt hoặc tìm nguồn mở file {browse `fullpath'}"
     
-    return local output "`output'"
-    return local timestamp "`timestamp'"
+shell start "" "`fullpath'"
+if "`autoopen'" != "" {
+    shell start "`output'"
+}
+
+return local output "`output'"
+return local timestamp "`timestamp'"
 end
 	
 
