@@ -4,8 +4,6 @@ program define rasenganhtml, rclass
         [ib(integer 1)] [ratio(string)] [per(string)] [p(string)] ///
         [output(string)] [digit(integer 1)] [autoopen] [title(string)] [pnote(string)] [lang(string)] [N(string)] [ptest(string)] ///
         [pdigit(integer 3)] [ratiodigit(integer 2)] [robust(string)] [event(varname)] [eventtime(varname)] [eventvalue(string)]
-    	
-		
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠻⡀⠑⠒⠀⠠⠆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⣘⠖⠀⠀⠀⠀⠀⠀⠀"
 		display as text "⠀⠀⠀⠀⠀⠀⠀⠴⡖⠒⠒⠈⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀"
@@ -30,6 +28,11 @@ program define rasenganhtml, rclass
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢠⠃⠀⠀⣿⣶⣶⣶⣶⠖⠁⠀⠀⡄⠐⠃⠀⠀⠎⠀⠀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢁⠎⠀⠀⣸⠿⠟⠛⠛⢣⠀⢀⣴⡟⠁⠀⢀⣀⡠⢤⣀⣀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⠎⠀⡀⣠⡿⠒⠢⡀⣠⠎⠀⢸⡏⠀⢀⠴⣯⣅⢀⢀⡉⣀⠀⣀⣨⣿⣿⣿⣿   "	
+		
+		
+		
+		
+		
     // Process the variable list with checkqname
     capture checkqname `orig_varlist' `if' `in'
     if _rc {
@@ -614,24 +617,72 @@ program define rasenganhtml, rclass
                     local p_ttest_str = string(`p_ttest', "%9.3f")
                 }
                 
-               // Median and IQR calculation
-foreach l of numlist 0/1 {
-    qui sum `var' if `by' == `l', detail
-    local median`l' = string(r(p50), "%9.`digit'f")
-    local q1`l' = string(r(p25), "%9.`digit'f")
-    local q3`l' = string(r(p75), "%9.`digit'f")
-    local iqr`l' = "`q1`l''-`q3`l''"
-}
-
-// Mann-Whitney test
-qui ranksum `var', by(`by')
-local p_ranksum = r(p)
-if `p_ranksum' < 0.001 {
-    local p_ranksum_str = "<0.001"
-} 
-else {
-    local p_ranksum_str = string(`p_ranksum', "%9.3f")
-}
+                // Median and IQR calculation
+                foreach l of numlist 0/1 {
+                    qui sum `var' if `by' == `l', detail
+                    local median`l' = string(r(p50), "%9.`digit'f")
+                    local q1`l' = string(r(p25), "%9.`digit'f")
+                    local q3`l' = string(r(p75), "%9.`digit'f")
+                    local iqr`l' = "`q1`l''-`q3`l''"
+                }
+                
+                // Mann-Whitney test
+                qui ranksum `var', by(`by')
+                local p_ranksum = r(p)
+                if `p_ranksum' < 0.001 {
+                    local p_ranksum_str = "<0.001"
+                } 
+                else {
+                    local p_ranksum_str = string(`p_ranksum', "%9.3f")
+                }
+                
+                // Calculate regression p-value based on ratio type
+                local p_regression = .
+                local p_regression_str = ""
+                
+                if "`ratio'" == "OR" {
+                    if `use_robust' {
+                        qui logistic `by' `var', vce(robust)
+                    }
+                    else {
+                        qui logistic `by' `var'
+                    }
+                    local p_regression = 2 * (1 - normal(abs(_b[`var']/_se[`var'])))
+                }
+                else if "`ratio'" == "RR" || "`ratio'" == "PR" {
+                    if `use_robust' {
+                        qui poisson `by' `var', irr vce(robust)
+                    }
+                    else {
+                        qui poisson `by' `var', irr
+                    }
+                    local p_regression = 2 * (1 - normal(abs(_b[`var']/_se[`var'])))
+                }
+                else if "`ratio'" == "HR" {
+                    qui stset `eventtime', failure(`event' == `eventvalue')
+                    if `use_robust' {
+                        qui stcox `var', vce(robust)
+                    }
+                    else {
+                        qui stcox `var'
+                    }
+                    local p_regression = 2 * (1 - normal(abs(_b[`var']/_se[`var'])))
+                }
+                
+                if `p_regression' < 0.001 {
+                    local p_regression_str = "<0.001"
+                } 
+                else {
+                    local p_regression_str = string(`p_regression', "%9.3f")
+                }
+                
+                // Format regression p-value for display
+                if "`pnote'" == "TRUE" {
+                    local p_regression_display "`p_regression_str'<sup>a</sup>"
+                }
+                else {
+                    local p_regression_display "`p_regression_str'"
+                }
 
 // Calculate additional p-value if ptest is specified
 if `have_ptest' {
@@ -789,7 +840,7 @@ file write `hh' "<tr>" _n ///
     "<td class='indent'>`mean_label'</td>" _n ///
     "<td class='center'>`mean1' ± `sd1'</td>" _n ///
     "<td class='center'>`mean0' ± `sd0'</td>" _n ///
-    "<td class='center'>`p_ttest_display'</td>" _n
+    "<td class='center'>`p_regression_display'</td>" _n
 
 // Add ptest cell if specified
 if `have_ptest' {
@@ -1085,23 +1136,24 @@ if "`pnote'" == "TRUE" {
 file write `hh' "<p class='timestamp'>`timestamp_label' `timestamp'</p>" _n ///
     "</body></html>" _n
 
-file close `hh'
+
 
 // Display link to the created file
+    file close `hh'
+    
     local fullpath = "file:" + c(pwd) + "/" + "`output'"
     display as text _n "Copy liên kết dán vào trình duyệt hoặc tìm nguồn mở file {browse `fullpath'}"
     
 
     shell start "" "`fullpath'"
-
     if "`autoopen'" != "" {
         shell start "`output'"
     }
-
+    
     return local output "`output'"
     return local timestamp "`timestamp'"
 end
-
+	
 
 capture program drop checkqname
 program define checkqname, rclass
