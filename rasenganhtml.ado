@@ -1,6 +1,6 @@
 capture program drop rasenganhtml
 program define rasenganhtml, rclass
-    syntax anything(name=orig_varlist id="variable list") [if] [in], by(varname) ///
+    syntax [anything(name=orig_varlist id="variable list" equalok)] [if] [in], by(varname) ///
         [ib(integer 1)] [ratio(string)] [per(string)] [p(string)] ///
         [output(string)] [digit(integer 1)] [autoopen] [title(string)] [pnote(string)] [lang(string)] [N(string)] [ptest(string)] ///
         [pdigit(integer 3)] [ratiodigit(integer 2)] [robust] [event(varname)] [eventtime(varname)] [eventvalue(string)] [all]
@@ -27,8 +27,54 @@ program define rasenganhtml, rclass
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇⡀⠀⡎⡸⠀⠀⢸⠀⠀⠀⠀⢠⣀⠖⠖⠉⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢠⠃⠀⠀⣿⣶⣶⣶⣶⠖⠁⠀⠀⡄⠐⠃⠀⠀⠎⠀⠀⠀⠀⠀⠀⠀⠀⠀   "
 		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢁⠎⠀⠀⣸⠿⠟⠛⠛⢣⠀⢀⣴⡟⠁⠀⢀⣀⡠⢤⣀⣀⠀⠀⠀⠀⠀⠀⠀   "
-		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⠎⠀⡀⣠⡿⠒⠢⡀⣠⠎⠀⢸⡏⠀⢀⠴⣯⣅⢀⢀⡉⣀⠀⣀⣨⣿⣿⣿⣿   "		
-		
+		display as text "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣏⠎⠀⡀⣠⡿⠒⠢⡀⣠⠎⠀⢸⡏⠀⢀⠴⣯⣅⢀⢀⡉⣀⠀⣀⣨⣿⣿⣿⣿   "	
+			
+	// Auto-select all variables if none provided, excluding by variable and special variables
+    if "`orig_varlist'" == "" {
+    // Get all variables in the dataset
+    quietly ds
+    local all_vars = r(varlist)
+    
+    // Initialize variables to exclude
+    local exclude_vars "`by'"
+    
+    // Add event and eventtime to exclude list if specified
+    if "`event'" != "" local exclude_vars "`exclude_vars' `event'"
+    if "`eventtime'" != "" local exclude_vars "`exclude_vars' `eventtime'"
+    
+    // Identify string variables (red text in Stata) to exclude
+    quietly ds, has(type string)
+    local string_vars = r(varlist)
+    
+    // Exclude variables with names like "id", "name", "stt" and string variables
+    foreach var of local all_vars {
+        // Check if variable name matches patterns to exclude or is a string variable
+        if "`var'" != "`by'" & "`var'" != "`event'" & "`var'" != "`eventtime'" {
+            local lowercase_var = lower("`var'")
+            // Check for name, id, stt or related patterns, and check if it's not a string variable
+            if !regexm("`lowercase_var'", "^(id|name|stt|code|mabn|maso|msbn|ma_bn)$") {
+                // Check if it's not in the string_vars list
+                local is_string = 0
+                foreach strvar of local string_vars {
+                    if "`var'" == "`strvar'" {
+                        local is_string = 1
+                        break
+                    }
+                }
+                
+                if `is_string' == 0 {
+                    local orig_varlist "`orig_varlist' `var'"
+                }
+            }
+        }
+    }
+        
+        // If no variables are left after filtering, warn user
+        if "`orig_varlist'" == "" {
+            display as error "Không có biến nào được chọn sau khi lọc. Vui lòng chỉ định biến."
+            exit 198
+        }
+    }	
     // Process the variable list with checkqname
     capture checkqname `orig_varlist' `if' `in'
     if _rc {
@@ -504,6 +550,7 @@ program define rasenganhtml, rclass
             "</tr>" _n
         
         local added_survival_data = 1
+
     }
             
     foreach var of varlist `varlist' {
@@ -810,7 +857,7 @@ local ratio_val = ""
 if "`ratio'" == "OR" {
     tempvar binary_outcome high_risk
     qui sum `var', detail
-    local median_all = r(p50)
+    local median_all = string(r(p50), "%9.`digit'f")
     gen `binary_outcome' = `var' > `median_all' if !missing(`var')
     
     if `use_robust' {
@@ -831,7 +878,7 @@ if "`ratio'" == "OR" {
 else if "`ratio'" == "RR" {
     tempvar binary_outcome high_risk
     qui sum `var', detail
-    local median_all = r(p50)
+    local median_all = string(r(p50), "%9.`digit'f")
     gen `binary_outcome' = `var' > `median_all' if !missing(`var')
     
     if `use_robust' {
@@ -852,7 +899,7 @@ else if "`ratio'" == "RR" {
 else if "`ratio'" == "PR" {
     tempvar binary_outcome high_risk
     qui sum `var', detail
-    local median_all = r(p50)
+    local median_all = string(r(p50), "%9.`digit'f")
     gen `binary_outcome' = `var' > `median_all' if !missing(`var')
     
     if `use_robust' {
