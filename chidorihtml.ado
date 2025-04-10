@@ -4,8 +4,7 @@ program define chidorihtml, rclass
     syntax varlist [if] [in], [cont(string)] [uncont(string)] ///
         [output(string)] [digit(integer 3)] [autoopen] [title(string)] [pnote(string)] [lang(string)] ///
         [pdigit(integer 3)] [robust(string)] [style(string)]
-    
-    // ASCII art dragon display (không thay đổi)
+        // ASCII art dragon display (không thay đổi)
 display as text "	⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⢀⣶⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠀⢀⣴⡇⢠⣾⡇⠀⣠⣴⣿⠁⠀⠀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
 display as text "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣤⣿⣿⣷⣿⣿⣷⣾⣿⣿⣧⣤⣶⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
@@ -45,7 +44,6 @@ display as text "⠀⠀⠀⠀⠀⢸⠃⠀⠀⠀⠀⣀⣼⣿⣷⣿⣿⣿⣿⣿⣿
 display as text "⠀⠀⠀⠀⢀⡟⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠃⢀⣾⢋⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠸⣇⠀⠀⠀⠀"
 display as text "⠀⠀⠀⠀⣸⠃⠀⠀⠀⠀⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠁⣠⡿⢡⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⢻⠀⠀⠀⠀"
 display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠏⠀⣴⡟⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⠀⠀⠀⠀⠀⢸⡇⠀⠀⠀"
-    
     // Kiểm tra: Phải chỉ định ít nhất một trong hai tùy chọn cont hoặc uncont
     if "`cont'" == "" & "`uncont'" == "" {
         display as error "Phải chỉ định ít nhất một trong hai tùy chọn: cont() hoặc uncont()"
@@ -91,6 +89,8 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
         local timestamp_label "Được tạo lúc:"
         local footnote_a "Hồi quy tuyến tính"
         local footnote_b "Kiểm định t (T-test)"
+        local footnote_b1 "Kiểm định t với phương sai đồng nhất (Equal variances t-test)"
+        local footnote_b2 "Kiểm định t với phương sai không đồng nhất (Unequal variances t-test)"
         local footnote_c "Kiểm định Mann-Whitney (Wilcoxon rank)"
         local footnote_d "Kiểm định ANOVA một chiều"
         local footnote_e "Kiểm định Kruskal-Wallis"
@@ -111,6 +111,8 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
         local timestamp_label "Generated at:"
         local footnote_a "Linear regression"
         local footnote_b "t-test"
+        local footnote_b1 "t-test with equal variances"
+        local footnote_b2 "t-test with unequal variances"
         local footnote_c "Mann-Whitney test (Wilcoxon rank)"
         local footnote_d "One-way ANOVA"
         local footnote_e "Kruskal-Wallis test"
@@ -345,8 +347,7 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
         "<button class='btn copy-btn' onclick='copyTableToClipboard()'>Copy Table</button>" _n ///
         "<button class='btn decimal-btn' onclick='switchDecimalSeparator()' data-current='dot'>Use Comma (,) Decimal</button>" _n ///
         "</div>" _n
-    
-    // Start table
+	// Start table
     file write `hh' "<table>" _n
     
     // Create table header
@@ -550,13 +551,29 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
                             
                             // Use appropriate test based on normality
                             if `is_normal' == 1 {
-                                // Use t-test for normal distribution
-                                local test_type = "b" // t-test
-                                local test_types "`test_types'b"
-                                local temp_used_notes "`temp_used_notes' b"
+                                // For t-test, first check equality of variances using sdtest
+                                qui sdtest `depvar', by(`var')
+                                local equal_variance = 1
                                 
-                                qui ttest `depvar', by(`var')
-                                local p_value = r(p)
+                                if r(p) < 0.05 {
+                                    // Unequal variances
+                                    local equal_variance = 0
+                                    local test_type = "b2" // t-test with unequal variances
+                                    local test_types "`test_types'b2"
+                                    local temp_used_notes "`temp_used_notes' b2"
+                                    
+                                    qui ttest `depvar', by(`var') unequal
+                                    local p_value = r(p)
+                                }
+                                else {
+                                    // Equal variances
+                                    local test_type = "b1" // t-test with equal variances
+                                    local test_types "`test_types'b1"
+                                    local temp_used_notes "`temp_used_notes' b1"
+                                    
+                                    qui ttest `depvar', by(`var')
+                                    local p_value = r(p)
+                                }
                             }
                             else {
                                 // Use Mann-Whitney/Wilcoxon rank sum for non-normal distribution
@@ -675,6 +692,8 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
                         // Store p-value for LE style
                         if `use_le_style' == 1 {
                             matrix `p_values'[`var_index', `dep_var_index'] = `p_value'
+                            local note_index = `var_index'
+                            local p_value_notes = "`p_value_notes'`test_type'"
                         }
                         
                         if "`pnote'" == "TRUE" & `use_le_style' == 0 {
@@ -710,7 +729,22 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
                 local test_index = 1
                 foreach depvar in `cont_vars' `uncont_vars' {
                     local p_val = `p_values'[`var_index', `dep_var_index']
-                    local test_char = substr("`test_types'", `test_index', 1)
+                    
+                    // Ensure test_type starts at correct position
+                    if `dep_var_index' <= `num_cont_vars' {
+                        local curr_test_type = substr("`test_types'", `dep_var_index', 2)
+                        if substr("`curr_test_type'", 1, 1) == "b" {
+                            // If it starts with b, check for b1 or b2
+                            local curr_test_type = substr("`test_types'", `dep_var_index', 2)
+                        }
+                        else {
+                            local curr_test_type = substr("`test_types'", `dep_var_index', 1)
+                        }
+                    }
+                    else {
+                        // For non-continuous variables, usually Mann-Whitney
+                        local curr_test_type = "c"
+                    }
                     
                     // Format p-value
                     if `p_val' < 0.001 {
@@ -730,7 +764,7 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
                     
                     // Add footnote to the p-value itself if pnote is TRUE
                     if "`pnote'" == "TRUE" {
-                        file write `hh' "<td`class_add' class='center'>`p_display'<sup>`test_char'</sup></td>" _n
+                        file write `hh' "<td`class_add' class='center'>`p_display'<sup>`curr_test_type'</sup></td>" _n
                     }
                     else {
                         file write `hh' "<td`class_add' class='center'>`p_display'</td>" _n
@@ -893,14 +927,14 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
                     if "`pnote'" == "TRUE" {
                         // For continuous variables, use g or h based on the variable type
                         if `dep_var_index' <= `num_cont_vars' {
-                            file write `hh' "<td`class_add' class='center' style='text-align: center;'>`p_display'<sup>g</sup></td>" _n
+                            file write `hh' "<td`class_add' class='center'>`p_display'<sup>g</sup></td>" _n
                         }
                         else {
-                            file write `hh' "<td`class_add' class='center' style='text-align: center;'>`p_display'<sup>h</sup></td>" _n
+                            file write `hh' "<td`class_add' class='center'>`p_display'<sup>h</sup></td>" _n
                         }
                     }
                     else {
-                        file write `hh' "<td`class_add' class='center' style='text-align: center;'>`p_display'</td>" _n
+                        file write `hh' "<td`class_add' class='center'>`p_display'</td>" _n
                     }
                     
                     local dep_var_index = `dep_var_index' + 1
@@ -929,8 +963,11 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
         if strpos("`used_notes'", "a") > 0 {
             file write `hh' "a: `footnote_a'<br>" _n
         }
-        if strpos("`used_notes'", "b") > 0 {
-            file write `hh' "b: `footnote_b'<br>" _n
+        if strpos("`used_notes'", "b1") > 0 {
+            file write `hh' "b1: `footnote_b1'<br>" _n
+        }
+        if strpos("`used_notes'", "b2") > 0 {
+            file write `hh' "b2: `footnote_b2'<br>" _n
         }
         if strpos("`used_notes'", "c") > 0 {
             file write `hh' "c: `footnote_c'<br>" _n
@@ -963,7 +1000,6 @@ display as text "⠀⠀⠀⠀⡟⠀⠀⠀⠀⠀⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
     local fullpath = "file:" + c(pwd) + "/" + "`output'"
     display as text _n "Copy liên kết dán vào trình duyệt hoặc tìm nguồn mở file {browse `fullpath'}"
     
-
     shell start "" "`fullpath'"
     if "`autoopen'" != "" {
         shell start "`output'"
